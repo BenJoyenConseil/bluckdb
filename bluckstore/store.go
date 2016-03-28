@@ -5,6 +5,10 @@ import (
 	"strings"
 	"os"
 	"bufio"
+	"strconv"
+	"crypto/md5"
+	"encoding/binary"
+	"fmt"
 )
 
 type KVStore interface {
@@ -18,7 +22,7 @@ type MemKVStore struct {
 
 type DiskKVStore struct {
 	filename string
-	count int
+	numPartition int
 }
 
 func (store *MemKVStore) Get(k string) string {
@@ -35,7 +39,7 @@ func NewMemStore() KVStore {
 
 func (store *DiskKVStore) Get(k string) string {
 	var value string
-	body, _ := ioutil.ReadFile(store.filename)
+	body, _ := ioutil.ReadFile(store.filename + strconv.Itoa(consistentHash(k, store.numPartition)) + ".blk")
 	lines := strings.Split(string(body), "\n")
 
 	for i := range lines {
@@ -51,7 +55,11 @@ func (store *DiskKVStore) Get(k string) string {
 }
 
 func (store *DiskKVStore) Put(k, value string)  {
-	f, err := os.OpenFile(store.filename, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
+
+	partition := strconv.Itoa(consistentHash(k, store.numPartition))
+	fmt.Printf("put to partition : " + partition + "\t")
+	fmt.Printf(store.filename + partition + ".blk")
+	f, err := os.OpenFile(store.filename + partition + ".blk", os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
 		panic(err)
 	}
@@ -67,5 +75,22 @@ func (store *DiskKVStore) Put(k, value string)  {
 
 func NewDiskStore() KVStore {
 
-	return &DiskKVStore{filename: "/tmp/data.blk", count:0}
+	fileNameTemplate := "/tmp/data"
+	extension := ".blk"
+	numPartition := 10
+
+	for i := 0; i < numPartition; i++ {
+		f, _ := os.OpenFile(fileNameTemplate + strconv.Itoa(i) + extension, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
+		f.Close()
+	}
+	return &DiskKVStore{filename: fileNameTemplate, numPartition:numPartition}
+}
+
+func consistentHash(k string, numPartition int) int{
+	h := md5.New()
+	h.Write([]byte(k))
+
+	r := binary.LittleEndian.Uint32(h.Sum(nil))
+	i := int(r) % numPartition
+	return i
 }
