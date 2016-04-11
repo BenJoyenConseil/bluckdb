@@ -10,7 +10,7 @@ import (
 func TestGet(t *testing.T) {
 	// Given
 	assert := assert.New(t)
-	store := &MemKVStore{pairs:map[string]string{"123" : "hello world"}}
+	store := &MemKVStore{hashmap:map[string]string{"123" : "hello world"}}
 
 	// When
 	result := store.Get("123")
@@ -28,7 +28,7 @@ func TestPut(t *testing.T) {
 	store.Put("123", "hello world")
 
 	// Then
-	assert.Equal(store.pairs["123"], "hello world")
+	assert.Equal(store.hashmap["123"], "hello world")
 }
 
 func BenchmarkPutDiskKVStore(b *testing.B) {

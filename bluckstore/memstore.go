@@ -3,19 +3,19 @@ package bluckstore
 
 
 type MemKVStore struct {
-	pairs map[string]string
+	hashmap *HashMap
 }
 
-
-
 func (store *MemKVStore) Get(k string) string {
-	return store.pairs[k]
+	return store.hashmap.Get(String(k)).(string)
 }
 
 func (store *MemKVStore) Put(k, v string) {
-	store.pairs[k] = v
+	store.hashmap.Put(String(k), v)
 }
 
 func NewMemStore() KVStore {
-	return &MemKVStore{make(map[string]string)}
+	store := &MemKVStore{}
+	store.hashmap = NewHashMap()
+	return store
 }

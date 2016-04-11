@@ -44,3 +44,12 @@ func (self * HashMap) Put(key Hashable, value interface{}) {
 		self.expand()
 	}
 }
+
+func (self * HashMap) Get(key Hashable) interface{} {
+	bucket := self.bucket(key)
+
+	if has, value := self.table[bucket].Get(key); has {
+		return value
+	}
+	return "key not found"
+}

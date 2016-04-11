@@ -8,7 +8,7 @@ import (
 
 func main() {
 
-	store := bluckstore.NewDiskStore()
+	store := bluckstore.NewMemStore()
 	http.HandleFunc("/get/", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		fmt.Fprint(w, r.Form.Get("key"))

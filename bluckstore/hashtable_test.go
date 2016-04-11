@@ -57,3 +57,28 @@ func TestHashMapPut_WhenTableLenIsLessThan_2xActuelSize_ShouldExpandTable(t *tes
 	bucketNumberX2 := 16
 	assert.Equal(t, bucketNumberX2, len(hashMap.table))
 }
+
+func TestHashMapGet(t *testing.T) {
+	// Given
+	hashmap := NewHashMap()
+	hashmap.table[3] = &Entry{String("123"), "Hello world", nil}
+
+	// When
+	result := hashmap.Get(String("123"))
+
+	// Then
+	assert.Equal(t, "Hello world", result)
+}
+
+func TestHashMapGet_WhenKeyIsEqualToTheSecondEntry_ShouldReturnValueOfTheSecondEntry(t *testing.T) {
+	// Given
+	hashmap := NewHashMap()
+	second := &Entry{String("123"), "Hello world", nil}
+	hashmap.table[3] = &Entry{String("122"), "some value", second}
+
+	// When
+	result := hashmap.Get(String("123"))
+
+	// Then
+	assert.Equal(t, "Hello world", result)
+}
