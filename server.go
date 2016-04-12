@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/bjc/bluckdb/bluckstore"
+	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 	"net/http"
 	"fmt"
 )
@@ -20,5 +20,5 @@ func main() {
 		store.Put(r.Form.Get("key"), r.Form.Get("value"))
 	})
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":2233", nil)
 }
