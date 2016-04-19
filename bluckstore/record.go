@@ -1,14 +1,16 @@
 package bluckstore
 
 
+import "github.com/BenJoyenConseil/bluckdb/util"
+
 type Entry struct {
-	key Hashable
+	key util.Hashable
 
 	value interface{}
 	next *Entry
 }
 
-func (self *Entry) Put(key Hashable, value interface{}) (entry *Entry, appended bool) {
+func (self *Entry) Put(key util.Hashable, value interface{}) (entry *Entry, appended bool) {
 	if self == nil {
 		return &Entry{key: key, value: value, next: nil}, true
 	} else if self.key.Equals(key) {
@@ -20,7 +22,7 @@ func (self *Entry) Put(key Hashable, value interface{}) (entry *Entry, appended 
 	}
 }
 
-func (self *Entry) Get(key Hashable) (has bool, value interface{}) {
+func (self *Entry) Get(key util.Hashable) (has bool, value interface{}) {
 	if self == nil {
 		return false, nil
 	} else if self.key.Equals(key) {
