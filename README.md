@@ -22,7 +22,7 @@ For experimental and learning purpose only, not production ready.
 # How to start
 
 ## Get the package
-* go get https://github.com/BenJoyenConseil/bluckdb/bluckstore
+* go get github.com/BenJoyenConseil/bluckdb
 * If you run a go program for the first time, do not forget to setup your GOPATH : export GOPATH=$HOME/Dev/go
 
 ## Run the server
