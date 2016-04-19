@@ -3,6 +3,7 @@ package bluckstore
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"github.com/BenJoyenConseil/bluckdb/util"
 )
 
 
@@ -11,8 +12,8 @@ func TestHashMapBucket(t *testing.T) {
 	hashMap := NewHashMap()
 
 	// When
-	result := hashMap.bucket(String("123"))
-	result2 := hashMap.bucket(String("124"))
+	result := hashMap.bucket(util.String("123"))
+	result2 := hashMap.bucket(util.String("124"))
 
 
 	// Then
@@ -23,7 +24,7 @@ func TestHashMapBucket(t *testing.T) {
 func TestHashMapExpand(t *testing.T) {
 	// Given
 	hashMap := NewHashMap()
-	oldEntry := &Entry{String("123"), "some value", nil}
+	oldEntry := &Entry{util.String("123"), "some value", nil}
 	hashMap.table[1] = oldEntry
 
 	// When
@@ -39,10 +40,10 @@ func TestHashMapPut(t *testing.T) {
 	hashMap := NewHashMap()
 
 	// When
-	hashMap.Put(String("123"), "Hello world")
+	hashMap.Put(util.String("123"), "Hello world")
 
 	// Then
-	assert.Equal(t, &Entry{String("123"), "Hello world", nil}, hashMap.table[3])
+	assert.Equal(t, &Entry{util.String("123"), "Hello world", nil}, hashMap.table[3])
 }
 
 func TestHashMapPut_WhenTableLenIsLessThan_2xActuelSize_ShouldExpandTable(t *testing.T) {
@@ -51,7 +52,7 @@ func TestHashMapPut_WhenTableLenIsLessThan_2xActuelSize_ShouldExpandTable(t *tes
 	hashMap.size = 6
 
 	// When
-	hashMap.Put(String("123"), "Hello world")
+	hashMap.Put(util.String("123"), "Hello world")
 
 	// Then
 	bucketNumberX2 := 16
@@ -61,10 +62,10 @@ func TestHashMapPut_WhenTableLenIsLessThan_2xActuelSize_ShouldExpandTable(t *tes
 func TestHashMapGet(t *testing.T) {
 	// Given
 	hashmap := NewHashMap()
-	hashmap.table[3] = &Entry{String("123"), "Hello world", nil}
+	hashmap.table[3] = &Entry{util.String("123"), "Hello world", nil}
 
 	// When
-	result := hashmap.Get(String("123"))
+	result := hashmap.Get(util.String("123"))
 
 	// Then
 	assert.Equal(t, "Hello world", result)
@@ -73,11 +74,11 @@ func TestHashMapGet(t *testing.T) {
 func TestHashMapGet_WhenKeyIsEqualToTheSecondEntry_ShouldReturnValueOfTheSecondEntry(t *testing.T) {
 	// Given
 	hashmap := NewHashMap()
-	second := &Entry{String("123"), "Hello world", nil}
-	hashmap.table[3] = &Entry{String("122"), "some value", second}
+	second := &Entry{util.String("123"), "Hello world", nil}
+	hashmap.table[3] = &Entry{util.String("122"), "some value", second}
 
 	// When
-	result := hashmap.Get(String("123"))
+	result := hashmap.Get(util.String("123"))
 
 	// Then
 	assert.Equal(t, "Hello world", result)

@@ -1,5 +1,6 @@
 package bluckstore
 
+import "github.com/BenJoyenConseil/bluckdb/util"
 
 
 type MemKVStore struct {
@@ -7,11 +8,11 @@ type MemKVStore struct {
 }
 
 func (store *MemKVStore) Get(k string) string {
-	return store.hashmap.Get(String(k)).(string)
+	return store.hashmap.Get(util.String(k)).(string)
 }
 
 func (store *MemKVStore) Put(k, v string) {
-	store.hashmap.Put(String(k), v)
+	store.hashmap.Put(util.String(k), v)
 }
 
 func NewMemStore() KVStore {

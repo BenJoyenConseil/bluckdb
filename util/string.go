@@ -1,6 +1,8 @@
-package bluckstore
+package util
 
-import "hash/fnv"
+import (
+	"hash/fnv"
+)
 
 type String string
 

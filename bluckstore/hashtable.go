@@ -1,14 +1,11 @@
 package bluckstore
 
+import "github.com/BenJoyenConseil/bluckdb/util"
+
 type HashMap struct {
 	table []*Entry
 
 	size int
-}
-
-type Hashable interface {
-	Equals(h Hashable) bool
-	Hash() int
 }
 
 const BUCKET_NUMER int = 8
@@ -17,7 +14,7 @@ func NewHashMap() *HashMap{
 	return &HashMap{table:make([]* Entry, BUCKET_NUMER), size:0}
 }
 
-func (self * HashMap) bucket(key Hashable) int {
+func (self * HashMap) bucket(key util.Hashable) int {
 	return key.Hash() % len(self.table)
 }
 
@@ -32,7 +29,7 @@ func (self * HashMap) expand() {
 	}
 }
 
-func (self * HashMap) Put(key Hashable, value interface{}) {
+func (self * HashMap) Put(key util.Hashable, value interface{}) {
 	bucket := self.bucket(key)
 	var appended bool
 
@@ -45,7 +42,7 @@ func (self * HashMap) Put(key Hashable, value interface{}) {
 	}
 }
 
-func (self * HashMap) Get(key Hashable) interface{} {
+func (self * HashMap) Get(key util.Hashable) interface{} {
 	bucket := self.bucket(key)
 
 	if has, value := self.table[bucket].Get(key); has {

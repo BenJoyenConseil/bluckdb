@@ -1,4 +1,4 @@
-package bluckstore
+package util
 
 import (
 	"testing"
