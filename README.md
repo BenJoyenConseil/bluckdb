@@ -1,5 +1,7 @@
 # Bluckdb
 
+[![Build Status](https://travis-ci.org/BenJoyenConseil/bluckdb.svg?branch=master)](https://travis-ci.org/BenJoyenConseil/bluckdb)
+
 A Key/Value store implementation using Golang
 
 The ``server.go`` file is a simple http server that answers on the 8080 port.
