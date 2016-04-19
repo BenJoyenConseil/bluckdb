@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"math/rand"
 	"os"
+	"github.com/BenJoyenConseil/bluckdb/util"
 )
 
 func BenchmarkPutDiskKVStore(b *testing.B) {
@@ -20,8 +21,8 @@ func BenchmarkPutDiskKVStore(b *testing.B) {
 
 func BenchmarkGetDiskKVStore(b *testing.B) {
 	// setup
-	for f := 0; f < 10; f++ {
-		os.Remove("/tmp/data" + strconv.Itoa(f) + ".blk")
+	for f := 0; f < BUCKET_NUMER; f++ {
+		os.Remove(partitionFile(util.String(strconv.Itoa(f))))
 	}
 	store := NewDiskStore()
 	for i := 0; i < b.N; i++ {

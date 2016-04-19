@@ -6,18 +6,19 @@ import (
 	"os"
 	"bufio"
 	"strconv"
-	"crypto/md5"
-	"encoding/binary"
+	"github.com/BenJoyenConseil/bluckdb/util"
 )
 
-type DiskKVStore struct {
-	filename string
-	numPartition int
-}
+const extension = ".blk"
+const filename = "data"
+const path = "/tmp/"
+
+type DiskKVStore struct {}
 
 func (store *DiskKVStore) Get(k string) string {
 	var value string
-	body, _ := ioutil.ReadFile(store.filename + strconv.Itoa(consistentHash(k, store.numPartition)) + ".blk")
+	file := partitionFile(util.String(k))
+	body, _ := ioutil.ReadFile(file)
 	lines := strings.Split(string(body), "\n")
 
 	for i := range lines {
@@ -34,8 +35,8 @@ func (store *DiskKVStore) Get(k string) string {
 
 func (store *DiskKVStore) Put(k, value string)  {
 
-	partition := strconv.Itoa(consistentHash(k, store.numPartition))
-	f, err := os.OpenFile(store.filename + partition + ".blk", os.O_APPEND|os.O_RDWR, 0600)
+	file := partitionFile(util.String(k))
+	f, err := os.OpenFile(file, os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
 		panic(err)
 	}
@@ -51,22 +52,16 @@ func (store *DiskKVStore) Put(k, value string)  {
 
 func NewDiskStore() KVStore {
 
-	fileNameTemplate := "/tmp/data"
-	extension := ".blk"
-	numPartition := 10
-
-	for i := 0; i < numPartition; i++ {
-		f, _ := os.OpenFile(fileNameTemplate + strconv.Itoa(i) + extension, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
+	for i := 0; i < BUCKET_NUMER; i++ {
+		file := partitionFile(util.String(strconv.Itoa(i)))
+		f, _ := os.OpenFile(file, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
 		f.Close()
 	}
-	return &DiskKVStore{filename: fileNameTemplate, numPartition:numPartition}
+	return &DiskKVStore{}
 }
 
-func consistentHash(k string, numPartition int) int{
-	h := md5.New()
-	h.Write([]byte(k))
 
-	r := binary.LittleEndian.Uint32(h.Sum(nil))
-	i := int(r) % numPartition
-	return i
+func partitionFile(k util.String) string{
+	bucketId := strconv.Itoa(k.Hash() % BUCKET_NUMER)
+	return path + filename + bucketId + extension
 }
