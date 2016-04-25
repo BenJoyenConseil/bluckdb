@@ -10,3 +10,6 @@ notificaitons:
     on_failure: always
 before_script:
 - go get github.com/stretchr/testify/assert
+addons:
+    code_climate:
+        repo_token: 19dda6662ede4a2c8b86c59d72da712df1c9d75cb9f173650d01bcb7b9e22013
