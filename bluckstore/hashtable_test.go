@@ -24,7 +24,7 @@ func TestHashMapBucket(t *testing.T) {
 func TestHashMapExpand(t *testing.T) {
 	// Given
 	hashMap := NewHashMap()
-	oldEntry := &Entry{util.String("123"), "some value", nil}
+	oldEntry := &Record{util.String("123"), "some value", nil}
 	hashMap.table[1] = oldEntry
 
 	// When
@@ -43,7 +43,7 @@ func TestHashMapPut(t *testing.T) {
 	hashMap.Put(util.String("123"), "Hello world")
 
 	// Then
-	assert.Equal(t, &Entry{util.String("123"), "Hello world", nil}, hashMap.table[3])
+	assert.Equal(t, &Record{util.String("123"), "Hello world", nil}, hashMap.table[3])
 }
 
 func TestHashMapPut_WhenTableLenIsLessThan_2xActuelSize_ShouldExpandTable(t *testing.T) {
@@ -62,7 +62,7 @@ func TestHashMapPut_WhenTableLenIsLessThan_2xActuelSize_ShouldExpandTable(t *tes
 func TestHashMapGet(t *testing.T) {
 	// Given
 	hashmap := NewHashMap()
-	hashmap.table[3] = &Entry{util.String("123"), "Hello world", nil}
+	hashmap.table[3] = &Record{util.String("123"), "Hello world", nil}
 
 	// When
 	result := hashmap.Get(util.String("123"))
@@ -74,8 +74,8 @@ func TestHashMapGet(t *testing.T) {
 func TestHashMapGet_WhenKeyIsEqualToTheSecondEntry_ShouldReturnValueOfTheSecondEntry(t *testing.T) {
 	// Given
 	hashmap := NewHashMap()
-	second := &Entry{util.String("123"), "Hello world", nil}
-	hashmap.table[3] = &Entry{util.String("122"), "some value", second}
+	second := &Record{util.String("123"), "Hello world", nil}
+	hashmap.table[3] = &Record{util.String("122"), "some value", second}
 
 	// When
 	result := hashmap.Get(util.String("123"))

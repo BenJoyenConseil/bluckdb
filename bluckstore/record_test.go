@@ -7,9 +7,9 @@ import (
 )
 
 
-func TestEntryPut_WhenEntryIsNIL_ShouldReturnNewEntry(t *testing.T) {
+func TestRecordPut_WhenRecordIsNIL_ShouldReturnNewRecordAndTrue(t *testing.T) {
 	// Given
-	var entry *Entry
+	var entry *Record
 	var key util.String = "123"
 	value := "Hello, world !"
 
@@ -18,14 +18,14 @@ func TestEntryPut_WhenEntryIsNIL_ShouldReturnNewEntry(t *testing.T) {
 
 	// Then
 	assert.True(t, appended)
-	assert.Equal(t, result, &Entry{key: key, value: value, next: nil})
+	assert.Equal(t, result, &Record{key: key, value: value, next: nil})
 }
 
-func TestEntryPut_WhenContainsAllReadyKey_ShouldSetValueAndReturnFalse(t *testing.T) {
+func TestRecordPut_WhenContainsAlreadyThatKey_ShouldSetValueAndReturnFalse(t *testing.T) {
 	// Given
 	var key util.String = "123"
 	value := "Hello, world !"
-	entry := &Entry{key: key, value: value, next: nil}
+	entry := &Record{key: key, value: value, next: nil}
 
 
 	// When
@@ -33,25 +33,25 @@ func TestEntryPut_WhenContainsAllReadyKey_ShouldSetValueAndReturnFalse(t *testin
 
 	// Then
 	assert.False(t, appended)
-	assert.Equal(t, result, &Entry{key: key, value: "Bye bye !", next: nil})
+	assert.Equal(t, result, &Record{key: key, value: "Bye bye !", next: nil})
 }
 
-func TestEntryPut_WhenKeyCollision_ShouldFillNextEntry(t *testing.T) {
+func TestRecordPut_WhenKeyCollision_ShouldFillNextRecord(t *testing.T) {
 	// Given
-	var entry *Entry = &Entry{util.String("321"), "Bye Bye world", nil}
+	var entry *Record = &Record{util.String("321"), "Bye Bye world", nil}
 
 	// When
 	_, appended := entry.Put(util.String("123"), "Hello world")
 
 	// Then
 	assert.True(t, appended)
-	assert.Equal(t, entry.next, &Entry{util.String("123"), "Hello world", nil})
+	assert.Equal(t, entry.next, &Record{util.String("123"), "Hello world", nil})
 }
 
-func TestEntryGet_WhenKeyIsEqual_ShouldReturnValue(t *testing.T) {
+func TestRecordGet_WhenKeyIsEqual_ShouldReturnValue(t *testing.T) {
 	// Given
 	key := util.String("123")
-	var entry *Entry = &Entry{util.String("123"), "Hello world", nil}
+	var entry *Record = &Record{util.String("123"), "Hello world", nil}
 
 	// When
 	has, result := entry.Get(key)
@@ -61,10 +61,10 @@ func TestEntryGet_WhenKeyIsEqual_ShouldReturnValue(t *testing.T) {
 	assert.Equal(t, "Hello world", result)
 }
 
-func TestEntryGet_WhenKeyIsContainedInNextEntry_ShouldReturnValueFromNextEntry(t *testing.T) {
+func TestRecordGet_WhenKeyIsContainedInNextRecord_ShouldReturnValueFromNextRecord(t *testing.T) {
 	// Given
 	key := util.String("123")
-	var entry *Entry = &Entry{util.String("321"), "Bye Bye world", &Entry{util.String("123"), "Hello world", nil}}
+	var entry *Record = &Record{util.String("321"), "Bye Bye world", &Record{util.String("123"), "Hello world", nil}}
 
 	// When
 	has, result := entry.Get(key)
@@ -74,10 +74,10 @@ func TestEntryGet_WhenKeyIsContainedInNextEntry_ShouldReturnValueFromNextEntry(t
 	assert.Equal(t, "Hello world", result)
 }
 
-func TestEntryGet_WhenKeyIsNil_ShouldReturnFalseAndNil(t *testing.T) {
+func TestRecordGet_WhenKeyIsNil_ShouldReturnFalseAndNil(t *testing.T) {
 	// Given
 	key := util.String("123")
-	var entry *Entry
+	var entry *Record
 
 	// When
 	has, result := entry.Get(key)

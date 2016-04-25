@@ -22,7 +22,7 @@ func BenchmarkPutDiskKVStore(b *testing.B) {
 func BenchmarkGetDiskKVStore(b *testing.B) {
 	// setup
 	for f := 0; f < BUCKET_NUMER; f++ {
-		os.Remove(partitionFile(util.String(strconv.Itoa(f))))
+		os.Remove(buildPartitionFilePathString(util.String(strconv.Itoa(f))))
 	}
 	store := NewDiskStore()
 	for i := 0; i < b.N; i++ {

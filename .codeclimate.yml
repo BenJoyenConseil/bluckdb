@@ -2,6 +2,8 @@
 engines:
   fixme:
     enabled: true
+  gofmt:
+    enabled: true
 ratings:
-  paths: []
-exclude_paths: []
+  paths:
+    - "**.go"

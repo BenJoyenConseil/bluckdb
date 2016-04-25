@@ -15,15 +15,15 @@ const path = "/tmp/"
 
 type DiskKVStore struct {}
 
-func (store *DiskKVStore) Get(k string) string {
+func (store *DiskKVStore) Get(key string) string {
 	var value string
-	file := partitionFile(util.String(k))
+	file := buildPartitionFilePathString(util.String(key))
 	body, _ := ioutil.ReadFile(file)
 	lines := strings.Split(string(body), "\n")
 
 	for i := range lines {
 		keyValuePair := strings.Split(lines[i], ":")
-		if keyValuePair[0] == k {
+		if keyValuePair[0] == key {
 			value = keyValuePair[1]
 		}
 	}
@@ -35,7 +35,7 @@ func (store *DiskKVStore) Get(k string) string {
 
 func (store *DiskKVStore) Put(k, value string)  {
 
-	file := partitionFile(util.String(k))
+	file := buildPartitionFilePathString(util.String(k))
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_RDWR, 0600)
 	if err != nil {
 		panic(err)
@@ -53,7 +53,7 @@ func (store *DiskKVStore) Put(k, value string)  {
 func NewDiskStore() KVStore {
 
 	for i := 0; i < BUCKET_NUMER; i++ {
-		file := partitionFile(util.String(strconv.Itoa(i)))
+		file := buildPartitionFilePathString(util.String(strconv.Itoa(i)))
 		f, _ := os.OpenFile(file, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
 		f.Close()
 	}
@@ -61,7 +61,7 @@ func NewDiskStore() KVStore {
 }
 
 
-func partitionFile(k util.String) string{
-	bucketId := strconv.Itoa(k.Hash() % BUCKET_NUMER)
+func buildPartitionFilePathString(key util.String) string{
+	bucketId := strconv.Itoa(key.Hash() % BUCKET_NUMER)
 	return path + filename + bucketId + extension
 }

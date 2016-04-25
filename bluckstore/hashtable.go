@@ -3,7 +3,7 @@ package bluckstore
 import "github.com/BenJoyenConseil/bluckdb/util"
 
 type HashMap struct {
-	table []*Entry
+	table []*Record
 
 	size int
 }
@@ -11,7 +11,7 @@ type HashMap struct {
 const BUCKET_NUMER int = 8
 
 func NewHashMap() *HashMap{
-	return &HashMap{table:make([]* Entry, BUCKET_NUMER), size:0}
+	return &HashMap{table:make([]*Record, BUCKET_NUMER), size:0}
 }
 
 func (self * HashMap) bucket(key util.Hashable) int {
@@ -20,7 +20,7 @@ func (self * HashMap) bucket(key util.Hashable) int {
 
 func (self * HashMap) expand() {
 	table := self.table
-	self.table = make([]*Entry, len(table) * 2)
+	self.table = make([]*Record, len(table) * 2)
 
 	for _, E := range table {
 		for e := E; e != nil ; e = e.next {
