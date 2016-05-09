@@ -11,7 +11,7 @@ type ByteRecord struct {
 	value []byte
 }
 
-type ByteRecordReader struct {}
+type ByteRecordUnserializer struct {}
 
 
 type ByteRecordSerializer struct {}
@@ -23,8 +23,8 @@ type Record interface {
 	Value() []byte
 }
 
-type RecordReader interface {
-	Read(date []byte) Record
+type RecordUnserializer interface {
+	Unserialize(date []byte) Record
 }
 
 type RecordSerializer interface {
@@ -68,7 +68,7 @@ func New(key, value string) Record {
 	}
 }
 
-func (reader *ByteRecordReader) Read(data []byte) *ByteRecord {
+func (reader *ByteRecordUnserializer) Unserialize(data []byte) *ByteRecord {
 
 	keyLen := binary.LittleEndian.Uint16(data)
 	valueLen := binary.LittleEndian.Uint16(data[2:])

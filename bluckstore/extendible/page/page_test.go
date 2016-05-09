@@ -12,15 +12,6 @@ func (self *stubRecord) Payload() uint16 {return self.payload}
 func (self *stubRecord) Key() []byte {return self.key}
 func (self *stubRecord) Value() []byte {return self.value}
 
-type stubRecordReader struct {}
-func (self *stubRecordReader) Read(data []byte) extendible.Record {
-	return &stubRecord{
-		payload: uint16(8),
-		key: data[0:3],
-		value: data[3:8],
-	}
-}
-
 func TestFull_When_Record_Payload_Plus_USE_areHigherTo_PAGE_SIZE(t *testing.T) {
 	// Given
 	page := &Page{
@@ -72,6 +63,15 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, 4096, len(result.content))
 }
 
+type stubRecordUnSerializer struct {}
+func (self *stubRecordUnSerializer) Unserialize(data []byte) extendible.Record {
+	return &stubRecord{
+		payload: uint16(8),
+		key: data[0:3],
+		value: data[3:8],
+	}
+}
+
 func TestGet(t *testing.T) {
 	// Given
 	page := &Page{
@@ -85,7 +85,7 @@ func TestGet(t *testing.T) {
 	page.content = append(page.content, pair2...)
 	page.content = append(page.content, pair3...)
 	page.content = append(page.content, pair4...)
-	page.recordReader = &stubRecordReader{}
+	page.recordUnserializer = &stubRecordUnSerializer{}
 
 	// When
 	result, _ := page.Get("123")
@@ -95,14 +95,14 @@ func TestGet(t *testing.T) {
 }
 
 type stubRecordSerializer struct {}
-func (self *stubRecordSerializer) Serialize(record extendible.Record) []byte{return append(append([]byte("lol"), record.Key()...), record.Value()...)}
+func (self *stubRecordUnSerializer) Serialize(record extendible.Record) []byte{return append(append([]byte("lol"), record.Key()...), record.Value()...)}
 
 func TestPut(t *testing.T) {
 	// Given
 	page := &Page{
 		content: []byte{},
 	}
-	page.recordSerializer = &stubRecordSerializer{}
+	page.recordSerializer = &stubRecordUnSerializer{}
 
 	// When
 

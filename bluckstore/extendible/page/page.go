@@ -13,7 +13,7 @@ type Page struct {
 	localDepth uint64
 	content []byte
 	use uint16
-	recordReader extendible.RecordReader
+	recordUnserializer extendible.RecordUnserializer
 	recordSerializer extendible.RecordSerializer
 }
 
@@ -51,7 +51,7 @@ func (self * Page) Get(key string) (string, error) {
 	offset := 0
 
 	for offset < len(self.content){
-		record = self.recordReader.Read(self.content[offset:])
+		record = self.recordUnserializer.Unserialize(self.content[offset:])
 		offset += int(record.Payload())
 
 		if string(record.Key()) == key {
