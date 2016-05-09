@@ -13,6 +13,7 @@ type Page struct {
 	localDepth uint64
 	content []byte
 	use uint16
+	recordReader extendible.RecordReader
 }
 
 func New() *Page{
@@ -35,5 +36,17 @@ func (self *Page) Put(key, value string) error {
 }
 
 func (self * Page) Get(key string) (string, error) {
-	return "", errors.New("Not implemented")
+
+	var record extendible.Record
+	offset := 0
+
+	for offset < len(self.content){
+		record = self.recordReader.Read(self.content[offset:])
+		offset += int(record.Payload())
+		if string(record.Key()) == key {
+			return string(record.Value()), nil
+		}
+	}
+
+	return "", errors.New("Key not found : " + key)
 }
