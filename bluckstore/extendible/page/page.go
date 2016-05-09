@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	PAGE_SIZE = uint16(4096) // bytes
+	PAGE_DISK_SIZE = uint16(4096) // bytes
 )
 
-type Page struct {
+type PageDisk struct {
 	localDepth uint64
 	content []byte
 	use uint16
@@ -17,22 +17,28 @@ type Page struct {
 	recordSerializer extendible.RecordSerializer
 }
 
-func New() *Page{
-	return &Page{
+type Page interface {
+	Full(record extendible.Record) bool
+	Put(key, value string) error
+	Get(key string) (string, error)
+}
+
+func New() *PageDisk {
+	return &PageDisk{
 		localDepth: 0,
-		content: make([]byte, PAGE_SIZE),
+		content: make([]byte, PAGE_DISK_SIZE),
 		use: 0,
 	}
 }
 
-func (self *Page) Full(record extendible.Record) bool {
-	if record.Payload() + self.use > PAGE_SIZE {
+func (self *PageDisk) Full(record extendible.Record) bool {
+	if record.Payload() + self.use > PAGE_DISK_SIZE {
 		return true
 	}
 	return false
 }
 
-func (self *Page) Put(key, value string) error {
+func (self *PageDisk) Put(key, value string) error {
 
 	record := extendible.New(key, value)
 
@@ -45,7 +51,7 @@ func (self *Page) Put(key, value string) error {
 	return nil
 }
 
-func (self * Page) Get(key string) (string, error) {
+func (self *PageDisk) Get(key string) (string, error) {
 
 	var record extendible.Record
 	offset := 0
@@ -62,6 +68,6 @@ func (self * Page) Get(key string) (string, error) {
 	return "", errors.New("Key not found : " + key)
 }
 
-func (self *Page) Content() []byte  {
+func (self *PageDisk) Content() []byte  {
 	return self.content
 }

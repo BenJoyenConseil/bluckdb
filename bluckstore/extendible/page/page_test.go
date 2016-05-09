@@ -14,8 +14,8 @@ func (self *stubRecord) Value() []byte {return self.value}
 
 func TestFull_When_Record_Payload_Plus_USE_areHigherTo_PAGE_SIZE(t *testing.T) {
 	// Given
-	page := &Page{
-		use: PAGE_SIZE - 13,
+	page := &PageDisk{
+		use: PAGE_DISK_SIZE - 13,
 	}
 
 	// When
@@ -27,8 +27,8 @@ func TestFull_When_Record_Payload_Plus_USE_areHigherTo_PAGE_SIZE(t *testing.T) {
 
 func TestFull_When_Record_Payload_Plus_USE_areLowerTo_PAGE_SIZE(t *testing.T) {
 	// Given
-	page := &Page{
-		use: PAGE_SIZE - 20,
+	page := &PageDisk{
+		use: PAGE_DISK_SIZE - 20,
 	}
 
 	// When
@@ -40,8 +40,8 @@ func TestFull_When_Record_Payload_Plus_USE_areLowerTo_PAGE_SIZE(t *testing.T) {
 
 func TestFull_When_Record_Payload_Plus_USE_areEqualTo_PAGE_SIZE(t *testing.T) {
 	// Given
-	page := &Page{
-		use: PAGE_SIZE - 20,
+	page := &PageDisk{
+		use: PAGE_DISK_SIZE - 20,
 	}
 
 	// When
@@ -74,7 +74,7 @@ func (self *stubRecordUnSerializer) Unserialize(data []byte) extendible.Record {
 
 func TestGet(t *testing.T) {
 	// Given
-	page := &Page{
+	page := &PageDisk{
 		content: []byte{},
 	}
 	pair1 := []byte("121Hello")
@@ -99,7 +99,7 @@ func (self *stubRecordUnSerializer) Serialize(record extendible.Record) []byte{r
 
 func TestPut(t *testing.T) {
 	// Given
-	page := &Page{
+	page := &PageDisk{
 		content: []byte{},
 	}
 	page.recordSerializer = &stubRecordUnSerializer{}
@@ -122,7 +122,7 @@ func TestPut(t *testing.T) {
 
 func TestPut_Overflow(t *testing.T) {
 	// Given
-	page := &Page{
+	page := &PageDisk{
 		use: 4095,
 	}
 
