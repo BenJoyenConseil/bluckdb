@@ -30,7 +30,22 @@ func TestBytes(t *testing.T) {
 	result := record.Bytes()
 
 	// Then
-	var lenKeyEquals3 byte = 0x3
-	var lenValueEquals5 byte = 0x5
-	assert.Equal(t, []byte{lenKeyEquals3, lenValueEquals5,'1', '2', '3', 'H', 'e', 'l', 'l', 'o'}, result)
+	expected := []byte{0x3, 0x0, 0x5, 0x0, '1', '2', '3', 'H', 'e', 'l', 'l', 'o'}
+	assert.Equal(t, expected, result)
+}
+
+
+func TestRecordReader_Read(t *testing.T) {
+	// Given
+	data := []byte{0x3, 0x0, 0x5, 0x0, '1', '2', '3', 'H', 'e', 'l', 'l', 'o', '1'}
+	recordReader := &ByteRecordReader{}
+
+	// When
+	result := recordReader.Read(data)
+
+	// Then
+	assert.Equal(t, uint16(3), result.keyByteLen)
+	assert.Equal(t, uint16(5), result.valueByteLen)
+	assert.Equal(t, []byte("123"), result.key)
+	assert.Equal(t, []byte("Hello"), result.value)
 }
