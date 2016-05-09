@@ -7,7 +7,7 @@ import (
 )
 
 type stubRecord struct {payload uint16; key []byte; value []byte}
-func (self *stubRecord) Bytes() []byte {return nil}
+func (self *stubRecord) Bytes() []byte {return append(self.key, self.value...)}
 func (self *stubRecord) Payload() uint16 {return self.payload}
 func (self *stubRecord) Key() []byte {return self.key}
 func (self *stubRecord) Value() []byte {return self.value}
@@ -92,4 +92,43 @@ func TestGet(t *testing.T) {
 
 	// Then
 	assert.Equal(t, "Hello", result)
+}
+
+type stubRecordSerializer struct {}
+func (self *stubRecordSerializer) Serialize(record extendible.Record) []byte{return append(append([]byte("lol"), record.Key()...), record.Value()...)}
+
+func TestPut(t *testing.T) {
+	// Given
+	page := &Page{
+		content: []byte{},
+	}
+	page.recordSerializer = &stubRecordSerializer{}
+
+	// When
+
+	error := page.Put("121", "Hello")
+	error = page.Put("122", "Hello")
+	error = page.Put("123", "Hello")
+	result1 := page.content[0:11]
+	result2 := page.content[11:22]
+	result3 := page.content[22:]
+
+	// Then
+	assert.Equal(t, nil, error)
+	assert.Equal(t, "lol121Hello", string(result1))
+	assert.Equal(t, "lol122Hello", string(result2))
+	assert.Equal(t, "lol123Hello", string(result3))
+}
+
+func TestPut_Overflow(t *testing.T) {
+	// Given
+	page := &Page{
+		use: 4095,
+	}
+
+	// When
+	error := page.Put("123", "Hello")
+
+	// Then
+	assert.NotNil(t, error)
 }

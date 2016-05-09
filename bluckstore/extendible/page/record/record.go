@@ -10,7 +10,11 @@ type ByteRecord struct {
 	key []byte
 	value []byte
 }
+
 type ByteRecordReader struct {}
+
+
+type ByteRecordSerializer struct {}
 
 type Record interface {
 	Bytes() []byte
@@ -23,15 +27,20 @@ type RecordReader interface {
 	Read(date []byte) Record
 }
 
+type RecordSerializer interface {
+	Serialize(record Record) []byte
+}
 
+const keyPlusValueLen = 4
+const uint16Len = 2
 
 func (self *ByteRecord) Bytes() []byte {
-	bytes := make([]byte, 4)
+	bytes := make([]byte, keyPlusValueLen)
 	keyLen := uint16(len(self.key))
 	valueLen :=  uint16(len(self.value))
 
-	binary.LittleEndian.PutUint16(bytes[0:2], keyLen)
-	binary.LittleEndian.PutUint16(bytes[2:4], valueLen)
+	binary.LittleEndian.PutUint16(bytes[0:uint16Len], keyLen)
+	binary.LittleEndian.PutUint16(bytes[uint16Len:keyPlusValueLen], valueLen)
 	bytes = append(bytes[:], self.key[:]...)
 	bytes = append(bytes[:], self.value[:]...)
 
@@ -50,8 +59,16 @@ func (self *ByteRecord) Value() []byte {
 	return self.value
 }
 
-func (self *ByteRecordReader) Read(data []byte) *ByteRecord {
-	var keyPlusValueLen uint16 = 4
+func New(key, value string) Record {
+	return &ByteRecord{
+		keyByteLen: uint16(len(key)),
+		valueByteLen: uint16(len(value)),
+		key: []byte(key),
+		value: []byte(value),
+	}
+}
+
+func (reader *ByteRecordReader) Read(data []byte) *ByteRecord {
 
 	keyLen := binary.LittleEndian.Uint16(data)
 	valueLen := binary.LittleEndian.Uint16(data[2:])
@@ -65,4 +82,17 @@ func (self *ByteRecordReader) Read(data []byte) *ByteRecord {
 		key: key,
 		value: value,
 	}
+}
+
+func (writer *ByteRecordSerializer) Serialize(record Record) []byte {
+	bytes := make([]byte, keyPlusValueLen)
+	keyLen := uint16(len(record.Key()))
+	valueLen :=  uint16(len(record.Value()))
+
+	binary.LittleEndian.PutUint16(bytes[0:uint16Len], keyLen)
+	binary.LittleEndian.PutUint16(bytes[uint16Len:keyPlusValueLen], valueLen)
+	bytes = append(bytes[:], record.Key()[:]...)
+	bytes = append(bytes[:], record.Value()[:]...)
+
+	return bytes
 }

@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	PAGE_SIZE = uint16(4096) // byte
+	PAGE_SIZE = uint16(4096) // bytes
 )
 
 type Page struct {
@@ -14,6 +14,7 @@ type Page struct {
 	content []byte
 	use uint16
 	recordReader extendible.RecordReader
+	recordSerializer extendible.RecordSerializer
 }
 
 func New() *Page{
@@ -32,7 +33,16 @@ func (self *Page) Full(record extendible.Record) bool {
 }
 
 func (self *Page) Put(key, value string) error {
-	return errors.New("Not implemented")
+
+	record := extendible.New(key, value)
+
+	if self.Full(record) {
+		return errors.New("The page is full. Need to split !")
+	}
+
+	self.content = append(self.content, self.recordSerializer.Serialize(record)...)
+
+	return nil
 }
 
 func (self * Page) Get(key string) (string, error) {
@@ -43,10 +53,15 @@ func (self * Page) Get(key string) (string, error) {
 	for offset < len(self.content){
 		record = self.recordReader.Read(self.content[offset:])
 		offset += int(record.Payload())
+
 		if string(record.Key()) == key {
 			return string(record.Value()), nil
 		}
 	}
 
 	return "", errors.New("Key not found : " + key)
+}
+
+func (self *Page) Content() []byte  {
+	return self.content
 }
