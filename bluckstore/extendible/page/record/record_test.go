@@ -44,10 +44,8 @@ func TestRecordUnserializer(t *testing.T) {
 	result := recordUnserializer.Unserialize(data)
 
 	// Then
-	assert.Equal(t, uint16(3), result.keyByteLen)
-	assert.Equal(t, uint16(5), result.valueByteLen)
-	assert.Equal(t, []byte("123"), result.key)
-	assert.Equal(t, []byte("Hello"), result.value)
+	assert.Equal(t, []byte("123"), result.Key())
+	assert.Equal(t, []byte("Hello"), result.Value())
 }
 
 func TestRecordSerializer(t *testing.T) {

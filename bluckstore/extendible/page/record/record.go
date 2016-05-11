@@ -31,16 +31,16 @@ type RecordSerializer interface {
 	Serialize(record Record) []byte
 }
 
-const keyPlusValueLen = 4
-const uint16Len = 2
+const HEADERS_BYTE_SIZE = 4
+const uint16_BYTE_SIZE = 2
 
 func (self *ByteRecord) Bytes() []byte {
-	bytes := make([]byte, keyPlusValueLen)
+	bytes := make([]byte, HEADERS_BYTE_SIZE)
 	keyLen := uint16(len(self.key))
 	valueLen :=  uint16(len(self.value))
 
-	binary.LittleEndian.PutUint16(bytes[0:uint16Len], keyLen)
-	binary.LittleEndian.PutUint16(bytes[uint16Len:keyPlusValueLen], valueLen)
+	binary.LittleEndian.PutUint16(bytes[0 : uint16_BYTE_SIZE], keyLen)
+	binary.LittleEndian.PutUint16(bytes[uint16_BYTE_SIZE : HEADERS_BYTE_SIZE], valueLen)
 	bytes = append(bytes[:], self.key[:]...)
 	bytes = append(bytes[:], self.value[:]...)
 
@@ -68,13 +68,13 @@ func New(key, value string) Record {
 	}
 }
 
-func (reader *ByteRecordUnserializer) Unserialize(data []byte) *ByteRecord {
+func (reader *ByteRecordUnserializer) Unserialize(data []byte) Record {
 
 	keyLen := binary.LittleEndian.Uint16(data)
 	valueLen := binary.LittleEndian.Uint16(data[2:])
 
-	key := data[keyPlusValueLen : keyPlusValueLen + keyLen]
-	value := data[keyPlusValueLen + keyLen : keyPlusValueLen + keyLen + valueLen]
+	key := data[HEADERS_BYTE_SIZE : HEADERS_BYTE_SIZE + keyLen]
+	value := data[HEADERS_BYTE_SIZE + keyLen : HEADERS_BYTE_SIZE + keyLen + valueLen]
 
 	return &ByteRecord{
 		keyByteLen: keyLen,
@@ -85,12 +85,12 @@ func (reader *ByteRecordUnserializer) Unserialize(data []byte) *ByteRecord {
 }
 
 func (writer *ByteRecordSerializer) Serialize(record Record) []byte {
-	bytes := make([]byte, keyPlusValueLen)
+	bytes := make([]byte, HEADERS_BYTE_SIZE)
 	keyLen := uint16(len(record.Key()))
 	valueLen :=  uint16(len(record.Value()))
 
-	binary.LittleEndian.PutUint16(bytes[0:uint16Len], keyLen)
-	binary.LittleEndian.PutUint16(bytes[uint16Len:keyPlusValueLen], valueLen)
+	binary.LittleEndian.PutUint16(bytes[0:uint16_BYTE_SIZE], keyLen)
+	binary.LittleEndian.PutUint16(bytes[uint16_BYTE_SIZE:HEADERS_BYTE_SIZE], valueLen)
 	bytes = append(bytes[:], record.Key()[:]...)
 	bytes = append(bytes[:], record.Value()[:]...)
 
