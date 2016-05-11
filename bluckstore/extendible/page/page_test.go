@@ -63,8 +63,9 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, 4096, len(result.content))
 }
 
-type stubRecordUnSerializer struct {}
-func (self *stubRecordUnSerializer) Unserialize(data []byte) extendible.Record {
+type stubRecordUnserializer struct {}
+
+func (self *stubRecordUnserializer) Unserialize(data []byte) extendible.Record {
 	return &stubRecord{
 		payload: uint16(8),
 		key: data[0:3],
@@ -85,7 +86,7 @@ func TestGet(t *testing.T) {
 	page.content = append(page.content, pair2...)
 	page.content = append(page.content, pair3...)
 	page.content = append(page.content, pair4...)
-	page.recordUnserializer = &stubRecordUnSerializer{}
+	page.recordUnserializer = &stubRecordUnserializer{}
 
 	// When
 	result, _ := page.Get("123")
@@ -95,29 +96,37 @@ func TestGet(t *testing.T) {
 }
 
 type stubRecordSerializer struct {}
-func (self *stubRecordUnSerializer) Serialize(record extendible.Record) []byte{return append(append([]byte("lol"), record.Key()...), record.Value()...)}
+func (self *stubRecordSerializer) Serialize(record extendible.Record) []byte{return append(append([]byte("lol"), record.Key()...), record.Value()...)}
 
 func TestPut(t *testing.T) {
 	// Given
-	page := &PageDisk{
-		content: []byte{},
-	}
-	page.recordSerializer = &stubRecordUnSerializer{}
+	page := New()
+	page.recordSerializer = &stubRecordSerializer{}
 
 	// When
 
-	error := page.Put("121", "Hello")
-	error = page.Put("122", "Hello")
-	error = page.Put("123", "Hello")
+	page.Put("121", "Hello")
+	page.Put("122", "Hello")
 	result1 := page.content[0:11]
 	result2 := page.content[11:22]
-	result3 := page.content[22:]
 
 	// Then
-	assert.Equal(t, nil, error)
 	assert.Equal(t, "lol121Hello", string(result1))
 	assert.Equal(t, "lol122Hello", string(result2))
-	assert.Equal(t, "lol123Hello", string(result3))
+}
+
+func TestPut_shouldSetUse_withTheRecordLen(t *testing.T) {
+	// Given
+	page := &PageDisk{
+		use: 100,
+	}
+	page.recordSerializer = &stubRecordSerializer{}
+
+	// When
+	page.Put("123", "Hello")
+
+	// Then
+	assert.Equal(t, 100 + 3 + 5 + len("lol"), int(page.use))
 }
 
 func TestPut_Overflow(t *testing.T) {

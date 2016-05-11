@@ -21,6 +21,9 @@ type Page interface {
 	Full(record extendible.Record) bool
 	Put(key, value string) error
 	Get(key string) (string, error)
+	LocalDepth() uint64
+	SetLocalDepth(num uint64)
+	Content() []byte
 }
 
 func New() *PageDisk {
@@ -28,6 +31,8 @@ func New() *PageDisk {
 		localDepth: 0,
 		content: make([]byte, PAGE_DISK_SIZE),
 		use: 0,
+		recordSerializer: &extendible.ByteRecordSerializer{},
+		recordUnserializer: &extendible.ByteRecordUnserializer{},
 	}
 }
 
@@ -45,8 +50,11 @@ func (self *PageDisk) Put(key, value string) error {
 	if self.Full(record) {
 		return errors.New("The page is full. Need to split !")
 	}
-
-	self.content = append(self.content, self.recordSerializer.Serialize(record)...)
+	recordSerialized := self.recordSerializer.Serialize((record))
+	for i, b := range recordSerialized {
+		self.content[int(self.use) + i] = b
+	}
+	self.use += uint16(len(recordSerialized))
 
 	return nil
 }
@@ -70,4 +78,12 @@ func (self *PageDisk) Get(key string) (string, error) {
 
 func (self *PageDisk) Content() []byte  {
 	return self.content
+}
+
+func (self *PageDisk) LocalDepth() uint64 {
+	return self.localDepth
+}
+
+func (self *PageDisk) SetLocalDepth(depth uint64) {
+	self.localDepth = depth
 }
