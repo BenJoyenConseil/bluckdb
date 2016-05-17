@@ -142,7 +142,7 @@ func TestPut_WhenPageIsFull_WhenLocalDepthIsLowerthanGlobal_ShouldCreateNewPage(
 	dir.Put(key, value)
 
 	// Then
-	assert.Equal(t, p1, dir.pointerPageTable[0])
+	assert.NotEqual(t, p1, dir.pointerPageTable[0])
 	assert.NotEqual(t, p1, dir.pointerPageTable[1])
 }
 
