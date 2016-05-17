@@ -115,10 +115,11 @@ func TestPut(t *testing.T) {
 	assert.Equal(t, "lol122Hello", string(result2))
 }
 
-func TestPut_shouldSetUse_withTheRecordLen(t *testing.T) {
+func TestPut_shouldIncrementUse_withTheRecordLen(t *testing.T) {
 	// Given
 	page := &PageDisk{
 		use: 100,
+		content: make([]byte, PAGE_DISK_SIZE),
 	}
 	page.recordSerializer = &stubRecordSerializer{}
 
