@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"github.com/BenJoyenConseil/bluckdb/util"
 	"errors"
+	"github.com/stretchr/testify/assert"
 )
 
 type Page []byte
@@ -184,7 +185,23 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 
 }
 
-func (dir *Directory) nextPageId() int{
+func TestReplace(t *testing.T)  {
+	// Given
+	dir := &Directory{
+		table:[]int{0, 1, 3, 2, 0, 1, 3, 2},
+		gd: 2,
+		lastPageId: 4,
+	}
+
+	// When
+	r1, r2 := dir.replace(2, 2)
+
+	// Then
+	assert.Equal(t, 2, r1)
+	assert.Equal(t, 5, r2)
+}
+
+func (dir *Directory) nextPageId() int {
 	dir.lastPageId ++
 	return dir.lastPageId
 }
@@ -194,26 +211,27 @@ func (dir *Directory) put(key, value string) {
 	err := page.put(key, value)
 
 	if err != nil {
-		fmt.Println("Page id : " + strconv.Itoa(id))
-		fmt.Println(err)
-		if dir.gd == uint(page.ld()) {
+		if uint(page.ld()) == dir.gd {
 			dir.expand()
 		}
+		if uint(page.ld()) < dir.gd {
 
-		p1, p2 := dir.split(page)
-		id1, id2 := dir.replace(id, uint(page.ld()))
-		p1.setLd(page.ld() + 1)
-		p2.setLd(page.ld() + 1)
+			p1, p2 := dir.split(page)
+			id1, id2 := dir.replace(dir.table[id], uint(page.ld()))
+			p1.setLd(page.ld() + 1)
+			p2.setLd(page.ld() + 1)
 
-		dir.dataFile.WriteAt(p1, int64(id1 * 4096))
-		dir.dataFile.WriteAt(p2, int64(id2 * 4096))
-		dir.data.Unmap()
-		dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
-		//dir.put(key, value)
+			dir.dataFile.WriteAt(p1, int64(id1 * 4096))
+			dir.dataFile.WriteAt(p2, int64(id2 * 4096))
+			dir.data.Unmap()
+			dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
+			dir.put(key, value)
+		}
+
 	}
 }
 
-func TestDirectory(t *testing.T){
+func BenchmarkMemapPut(b *testing.B){
 	f, err := os.OpenFile("/tmp/data.db", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
 	defer f.Close()
 	if err != nil {
@@ -234,12 +252,44 @@ func TestDirectory(t *testing.T){
 	var page Page = Page(dir.data[0:4096])
 	fill(page)
 
-	//
-	key := "key123"
-	fmt.Println(dir.get(key))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
 
-	for i := 0; i < 2000; i++ {
 		dir.put("yolo !! " + strconv.Itoa(i), "mec, elle est où ma caisse ??")
-		fmt.Println(dir.table)
+	}
+	fmt.Println(dir.gd)
+
+}
+
+func BenchmarkMemapGet(b *testing.B){
+	f, err := os.OpenFile("/tmp/data.db", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	defer f.Close()
+	if err != nil {
+		fmt.Println(err)
+	}
+	f.Write(make([]byte, 4096))
+
+	// init
+	dir := &Directory{
+		dataFile: f,
+		gd: 0,
+		table: make([]int, 1),
+	}
+	dir.table[0] = 0
+	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
+	defer dir.data.Unmap()
+	// given
+	var page Page = Page(dir.data[0:4096])
+	fill(page)
+	for i := 0; i < b.N; i++ {
+
+		dir.put("yolo !! " + strconv.Itoa(i), "mec, elle est où ma caisse ??")
+	}
+
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		dir.get("yolo !! " + strconv.Itoa(i))
 	}
 }
