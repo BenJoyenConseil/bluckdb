@@ -124,6 +124,27 @@ func TestGet(t *testing.T) {
 	assert.Equal(t, "Yolo !", string(result))
 }
 
+func TestGet_ShouldReturnEmptyStringWhenKeyDoesntExist(t *testing.T) {
+	// Given
+	var p Page = make([]byte, 4096)
+	binary.LittleEndian.PutUint16(p[4094:], 14) // use
+
+	// insert a record
+	k := "key1223"
+	v := "Yolo !"
+	binary.LittleEndian.PutUint16(p[4:], 4) // length of key
+	binary.LittleEndian.PutUint16(p[6:], 6) // length of value
+	copy(p[8:12], k)
+	copy(p[12:18], v)
+	// end record
+
+	// When
+	result := p.get("key321")
+
+	// Then
+	assert.Empty(t, string(result))
+}
+
 func TestPut_UseShouldBeIncrementedWithThePayloadOfTheNewRecord(t *testing.T) {
 	// Given
 	var p Page = make([]byte, 4096)
