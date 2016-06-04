@@ -16,19 +16,15 @@ const path = "/tmp/"
 type DiskKVStore struct {}
 
 func (store *DiskKVStore) Get(key string) string {
-	var value string
 	file := buildPartitionFilePathString(util.String(key))
 	body, _ := ioutil.ReadFile(file)
 	lines := strings.Split(string(body), "\n")
 
-	for i := range lines {
+	for i := len(lines) -1; i >= 0 ; i-- {
 		keyValuePair := strings.Split(lines[i], ":")
 		if keyValuePair[0] == key {
-			value = keyValuePair[1]
+			return keyValuePair[1]
 		}
-	}
-	if len(value) > 0 {
-		return value
 	}
 	return "no such key"
 }
