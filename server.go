@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 	"net/http"
 	"fmt"
+	"github.com/BenJoyenConseil/bluckdb/bluckstore/memap"
 )
 
 func main() {
 
-	store := bluckstore.NewMemStore()
+
+	store := memap.New("/tmp/")
+	defer store.Close()
 	http.HandleFunc("/get/", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		fmt.Fprint(w, r.Form.Get("key"))
