@@ -26,5 +26,15 @@ For experimental and learning purpose only, not production ready.
 * If you run a go program for the first time, do not forget to setup your GOPATH : export GOPATH=$HOME/Dev/go
 
 ## Run the server
+
 * go run server.go
 * Go will silently exit if a process is already using port 2233
+
+## Benchmarks
+
+ * BenchmarkPutDiskKVStore-4	  200000	      6319 ns/op
+ * BenchmarkGetDiskKVStore-4	   10000	    340715 ns/op
+ * BenchmarkPutMemKVStore-4 	 1000000	      1301 ns/op
+ * BenchmarkGetMemKVStore-4 	 3000000	       594 ns/op
+ * BenchmarkMemapPut-4	          300000	      5452 ns/op
+ * BenchmarkMemapGet-4	         1000000	      2344 ns/op
