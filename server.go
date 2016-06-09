@@ -9,7 +9,8 @@ import (
 func main() {
 
 
-	store := memap.New("/tmp/")
+	store := &memap.MmapKVStore{}
+	store.Open()
 	defer store.Close()
 	http.HandleFunc("/get/", func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()

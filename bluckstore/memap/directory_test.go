@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"os"
 	"github.com/edsrzf/mmap-go"
+	"io/ioutil"
+	"fmt"
 )
 
 func TestDirectory_ExtendibleHash(t *testing.T) {
@@ -56,6 +58,7 @@ func TestDirectory_Get(t *testing.T) {
 	key := "123" //   1011
 	d.table[11] = 2
 	fileOffset := 2 * 4096
+	binary.LittleEndian.PutUint16(d.data[fileOffset + 4094:], 9)
 	binary.LittleEndian.PutUint16(d.data[fileOffset:], 3)
 	binary.LittleEndian.PutUint16(d.data[fileOffset + 2:], 2)
 	copy(d.data[fileOffset + 4:], []byte(key))
@@ -131,6 +134,22 @@ func TestDirectoryReplace(t *testing.T)  {
 	assert.Equal(t, 5, r2)
 }
 
+func TestDirectorySerializeMeta(t *testing.T)  {
+	// Given
+	dir := &Directory{
+		table:[]int{0, 1},
+		gd: 1,
+		lastPageId: 1,
+	}
+
+	// When
+	result := dir.serializeMeta()
+
+	// Then
+	assert.Equal(t, []byte{0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0,}, result)
+	assert.Equal(t, 16, len(result))
+}
+
 func TestDirectory_Put(t *testing.T) {
 	// Given
 	fPath := "/tmp/test.db"
@@ -158,7 +177,7 @@ func TestDirectory_Put(t *testing.T) {
 	os.Remove(fPath)
 }
 
-func TestDirectory_PutShouldIncrementLD(t *testing.T) {
+func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 	// Given
 	fPath := "/tmp/test.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
@@ -174,7 +193,7 @@ func TestDirectory_PutShouldIncrementLD(t *testing.T) {
 	defer dir.data.Unmap()
 	var page Page = Page(dir.data[0:4096])
 	fillPage(page, 5)
-	binary.LittleEndian.PutUint16(page[4094:], 4090)
+	binary.LittleEndian.PutUint16(page[4094:], 4090)    // full
 
 	// When
 	dir.put("123", "Yolo !")
@@ -183,18 +202,23 @@ func TestDirectory_PutShouldIncrementLD(t *testing.T) {
 	assert.Equal(t, 8192, len(dir.data))
 	assert.Equal(t, 1, Page(dir.data[:4096]).ld())
 	assert.Equal(t, 1, Page(dir.data[4096:8192]).ld())
+	os.Remove(fPath)
 }
 
 func TestDirectory_Put_INT(t *testing.T) {
 	// Given
 	fPath := "/tmp/test.db"
+	metaFPath := "/tmp/metaTest.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	metaF, _ := os.OpenFile(metaFPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
 	defer f.Close()
+	defer metaF.Close()
 	f.Write(make([]byte, 4096))
 	dir := &Directory{
 		dataFile: f,
 		gd: 0,
 		table: make([]int, 1),
+		metaFile: metaF,
 	}
 	dir.table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
@@ -202,7 +226,6 @@ func TestDirectory_Put_INT(t *testing.T) {
 
 	// When
 	for i := 0; i < 4000; i++ {
-
 		dir.put("key" + strconv.Itoa(i), "Yolo !")
 	}
 
@@ -210,10 +233,45 @@ func TestDirectory_Put_INT(t *testing.T) {
 	assert.Equal(t, []int{0, 1, 2, 3, 5, 7, 6, 4, 15, 12, 8, 14, 10, 9, 13, 11, 0, 22, 2, 3, 18, 7, 25, 19, 20, 24, 16, 21, 10, 17, 23, 11}, dir.table)
 
 	os.Remove(fPath)
+	os.Remove(metaFPath)
+}
+
+func TestDirectory_Put_ShouldWriteMetaFileOnDisk_WhenTableIsExpanded(t *testing.T) {
+	// Given
+	fPath := "/tmp/test.db"
+	metaFPath := "/tmp/metaTest.db"
+	f, _ := os.OpenFile(fPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	metaF, _ := os.OpenFile(metaFPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	defer f.Close()
+	defer metaF.Close()
+	f.Write(make([]byte, 4096))
+	dir := &Directory{
+		dataFile: f,
+		gd: 0,
+		table: make([]int, 1),
+		metaFile: metaF,
+	}
+	dir.table[0] = 0
+	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
+	defer dir.data.Unmap()
+
+	// When
+	for i := 0; i < 1000; i++ {
+
+		dir.put("key" + strconv.Itoa(i), "Yolo !")
+	}
+
+	// Then
+	result, _ := ioutil.ReadFile(metaFPath)
+	assert.NotEmpty(t, result)
+	fmt.Println([]byte(result))
+
+	os.Remove(fPath)
+	os.Remove(metaFPath)
 }
 
 
-func Invalid_TestDirectory_Put_SameKey(t *testing.T) {
+func TestDirectory_Put_SameKey(t *testing.T) {
 	// Given
 	fPath := "/tmp/test.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)

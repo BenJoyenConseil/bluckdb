@@ -1,80 +1,101 @@
 package memap
 
 import (
-	"testing"
-	"fmt"
 	"os"
-	"github.com/edsrzf/mmap-go"
 	"strconv"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"io/ioutil"
 )
 
 
+
+func TestOpen(t *testing.T) {
+	// Given
+	content := []byte{0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0,}
+	ioutil.WriteFile("/tmp/data.db", make([]byte, 8192), 0644)
+	ioutil.WriteFile("/tmp/db.meta", []byte(content), 0644)
+	store := MmapKVStore{}
+    defer store.Close()
+
+    // When
+    store.Open()
+
+	// Then
+	assert.Equal(t, 8192, len(store.dir.data))
+	assert.Equal(t, "/tmp/data.db", store.dir.dataFile.Name())
+	assert.Equal(t, []int{2, 1, 2}, store.dir.table)
+	assert.Equal(t, 1, int(store.dir.gd))
+    os.Remove("/tmp/data.db")
+    os.Remove("/tmp/db.meta")
+}
+
+func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
+    // Given
+    os.Remove("/tmp/data.db")
+    os.Remove("/tmp/db.meta")
+    store := MmapKVStore{}
+    store.Open()
+    store.Put("KEY", "VALUE")
+    store.Close()
+
+    // When
+    store.Open()
+
+    // Then
+    assert.Equal(t, 4096, len(store.dir.data))
+    assert.Equal(t, "/tmp/data.db", store.dir.dataFile.Name())
+    assert.Equal(t, []int{0}, store.dir.table)
+    assert.Equal(t, 0, int(store.dir.gd))
+    assert.Equal(t, "KEYVALUE", string(store.dir.data[4:12]))
+    store.Close()
+}
+
+func TestStoreUnMarshallMeta(t *testing.T) {
+    // Given
+    data := []byte{0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0,}
+
+    // When
+    gd, lastId, table := UnMarshallMeta(data)
+
+    // Then
+    assert.Equal(t, uint(1), gd)
+    assert.Equal(t, 1, lastId)
+    assert.Equal(t, []int{0, 1}, table)
+}
+
 func fill(page Page) {
-	for i := 0; i < 185; i++{
+	for i := 0; i < 185; i++ {
 		itoa := strconv.Itoa(i)
-		page.put("key" + itoa, "value yop yop")
+		page.put("key"+itoa, "value yop yop")
 	}
 }
 
-func BenchmarkMemapPut(b *testing.B){
-	f, err := os.OpenFile("/tmp/data.db", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
-	defer f.Close()
-	if err != nil {
-		fmt.Println(err)
-	}
-	f.Write(make([]byte, 4096))
+func BenchmarkMemapPut(b *testing.B) {
+    store := New()
+    defer store.Close()
 
-	// init
-	dir := &Directory{
-		dataFile: f,
-		gd: 0,
-		table: make([]int, 1),
+
+    b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+
+		store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
 	}
-	dir.table[0] = 0
-	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
-	defer dir.data.Unmap()
-	// given
-	var page Page = Page(dir.data[0:4096])
-	fill(page)
+
+}
+
+func BenchmarkMemapGet(b *testing.B) {
+    store := New()
+    defer store.Close()
+
+	for i := 0; i < b.N; i++ {
+
+        store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 
-		dir.put("yolo !! " + strconv.Itoa(i), "mec, elle est où ma caisse ??")
-	}
-	fmt.Println(dir.gd)
-
-}
-
-func BenchmarkMemapGet(b *testing.B){
-	f, err := os.OpenFile("/tmp/data.db", os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
-	defer f.Close()
-	if err != nil {
-		fmt.Println(err)
-	}
-	f.Write(make([]byte, 4096))
-
-	// init
-	dir := &Directory{
-		dataFile: f,
-		gd: 0,
-		table: make([]int, 1),
-	}
-	dir.table[0] = 0
-	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
-	defer dir.data.Unmap()
-	// given
-	var page Page = Page(dir.data[0:4096])
-	fill(page)
-	for i := 0; i < b.N; i++ {
-
-		dir.put("yolo !! " + strconv.Itoa(i), "mec, elle est où ma caisse ??")
-	}
-
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-
-		dir.get("yolo !! " + strconv.Itoa(i))
+        store.Get("yolo !! " + strconv.Itoa(i))
 	}
 }

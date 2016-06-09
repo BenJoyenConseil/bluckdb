@@ -37,8 +37,7 @@ func (p Page) setLd(v int) {
 }
 
 func (p Page) get(k string) string {
-
-	for i := 0; i <= p.use(); {
+	for i := 0; i < p.use(); {
 
 		lenKey := int(binary.LittleEndian.Uint16(p[i : i + 2]))
 		lenVal := int(binary.LittleEndian.Uint16(p[i + 2 : i + 4]))

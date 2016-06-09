@@ -4,6 +4,7 @@ import (
 	"github.com/edsrzf/mmap-go"
 	"os"
 "github.com/BenJoyenConseil/bluckdb/util"
+	"encoding/binary"
 )
 
 type Directory struct {
@@ -11,8 +12,10 @@ type Directory struct {
 	data mmap.MMap
 	gd uint
 	dataFile *os.File
+	metaFile *os.File
 	lastPageId int
 }
+
 
 func (dir *Directory) extendibleHash(k util.Hashable) int {
 	return k.Hash() & (( 1 << dir.gd) -1)
@@ -78,6 +81,9 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 
 
 func (dir *Directory) put(key, value string) {
+	if dir.get(key) != "" {
+		return
+	}
 	page, id := dir.getPage(key)
 	err := page.put(key, value)
 
@@ -97,7 +103,20 @@ func (dir *Directory) put(key, value string) {
 			dir.data.Unmap()
 			dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 			dir.put(key, value)
+			dir.metaFile.WriteAt(dir.serializeMeta(), 0)
+
 		}
 
 	}
+}
+
+func (dir *Directory) serializeMeta() []byte {
+	data := make([]byte, len(dir.table) * 4 + 4 + 4)
+	binary.LittleEndian.PutUint32(data, uint32(dir.gd))
+	binary.LittleEndian.PutUint32(data[4:], uint32(dir.lastPageId))
+	for i := 0; i < len(dir.table); i++ {
+
+		binary.LittleEndian.PutUint32(data[8 + i * 4:], uint32(dir.table[i]))
+	}
+	return data
 }
