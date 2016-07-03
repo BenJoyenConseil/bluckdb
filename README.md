@@ -9,8 +9,8 @@ The ``server.go`` file is a simple http server that answers on the 8080 port.
 
 There are two endpoints :
 
-    http://hostname:2233/get/?key=<some_key>
-    http://hostname:2233/put/?key=<some_key>&value=<some_value>
+    http://hostname:2233/get?key=<some_key>
+    http://hostname:2233/put?key=<some_key>&value=<some_value>
 
 
 ## the goal

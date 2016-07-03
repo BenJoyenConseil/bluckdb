@@ -1,31 +1,31 @@
 package memap
 
 import (
-	"os"
-	"strconv"
-	"github.com/stretchr/testify/assert"
-	"testing"
-	"io/ioutil"
+    "os"
+    "strconv"
+    "github.com/stretchr/testify/assert"
+    "testing"
+    "io/ioutil"
 )
 
 
 
 func TestOpen(t *testing.T) {
-	// Given
-	content := []byte{0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0,}
-	ioutil.WriteFile("/tmp/data.db", make([]byte, 8192), 0644)
-	ioutil.WriteFile("/tmp/db.meta", []byte(content), 0644)
-	store := MmapKVStore{}
+    // Given
+    content := []byte{0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x2, 0x0, 0x0, 0x0,}
+    ioutil.WriteFile("/tmp/data.db", make([]byte, 8192), 0644)
+    ioutil.WriteFile("/tmp/db.meta", []byte(content), 0644)
+    store := MmapKVStore{}
     defer store.Close()
 
     // When
     store.Open()
 
-	// Then
-	assert.Equal(t, 8192, len(store.dir.data))
-	assert.Equal(t, "/tmp/data.db", store.dir.dataFile.Name())
-	assert.Equal(t, []int{2, 1, 2}, store.dir.table)
-	assert.Equal(t, 1, int(store.dir.gd))
+    // Then
+    assert.Equal(t, 8192, len(store.dir.data))
+    assert.Equal(t, "/tmp/data.db", store.dir.dataFile.Name())
+    assert.Equal(t, []int{2, 1, 2}, store.dir.table)
+    assert.Equal(t, 1, int(store.dir.gd))
     os.Remove("/tmp/data.db")
     os.Remove("/tmp/db.meta")
 }
@@ -65,37 +65,38 @@ func TestStoreUnMarshallMeta(t *testing.T) {
 }
 
 func fill(page Page) {
-	for i := 0; i < 185; i++ {
-		itoa := strconv.Itoa(i)
-		page.put("key"+itoa, "value yop yop")
-	}
+    for i := 0; i < 185; i++ {
+        itoa := strconv.Itoa(i)
+        page.put("key"+itoa, "value yop yop")
+    }
 }
 
 func BenchmarkMemapPut(b *testing.B) {
-    store := New()
+    store := &MmapKVStore{}
+    store.Open()
     defer store.Close()
 
 
-    b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+    for i := 0; i < b.N; i++ {
 
-		store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
-	}
+        store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
+    }
 
 }
 
 func BenchmarkMemapGet(b *testing.B) {
-    store := New()
+    store := &MmapKVStore{}
+    store.Open()
     defer store.Close()
 
-	for i := 0; i < b.N; i++ {
+    for i := 0; i < b.N; i++ {
 
         store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
-	}
+    }
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
 
         store.Get("yolo !! " + strconv.Itoa(i))
-	}
+    }
 }
