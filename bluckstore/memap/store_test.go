@@ -6,6 +6,7 @@ import (
     "github.com/stretchr/testify/assert"
     "testing"
     "io/ioutil"
+    "math/rand"
 )
 
 
@@ -75,11 +76,11 @@ func BenchmarkMemapPut(b *testing.B) {
     store := &MmapKVStore{}
     store.Open()
     defer store.Close()
+    size := 1000000
 
 
-    for i := 0; i < b.N; i++ {
-
-        store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
+    for n := 0; n < b.N; n++ {
+        store.Put(strconv.Itoa(rand.Intn(size - 1)), "mec, elle est où ma caisse ??")
     }
 
 }
@@ -88,15 +89,13 @@ func BenchmarkMemapGet(b *testing.B) {
     store := &MmapKVStore{}
     store.Open()
     defer store.Close()
-
-    for i := 0; i < b.N; i++ {
-
+    size := 1000000
+    for i := 0; i < size; i++ {
         store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
     }
 
     b.ResetTimer()
-    for i := 0; i < b.N; i++ {
-
-        store.Get("yolo !! " + strconv.Itoa(i))
+    for n := 0; n < b.N; n++ {
+        store.Get(strconv.Itoa(rand.Intn(size - 1)))
     }
 }

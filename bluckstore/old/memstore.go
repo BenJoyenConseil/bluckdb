@@ -15,7 +15,7 @@ func (store *MemKVStore) Put(k, v string) {
 	store.hashmap.Put(util.String(k), v)
 }
 
-func NewMemStore() KVStore {
+func NewMemStore() *MemKVStore {
 	store := &MemKVStore{}
 	store.hashmap = NewHashMap()
 	return store

@@ -31,9 +31,9 @@ For experimental and learning purpose only, not production ready.
 * Go will silently exit if a process is already using port 2233
 
 ## Benchmarks
-    BenchmarkPutDiskKVStore-4	  200000	      6319 ns/op
-    BenchmarkGetDiskKVStore-4	   10000	    340715 ns/op
-    BenchmarkPutMemKVStore-4 	 1000000	      1301 ns/op
-    BenchmarkGetMemKVStore-4 	 3000000	       594 ns/op
-    BenchmarkMemapPut-4	          300000	      5452 ns/op
-    BenchmarkMemapGet-4	         1000000	      2344 ns/op
+    BenchmarkMemapPut-4              1000000              1529 ns/op   -> 1,5 µs
+    BenchmarkMemapGet-4              1000000              1874 ns/op   -> 1,9 µs
+    BenchmarkPutDiskKVStore-4         200000              6250 ns/op   -> 6,2 µs
+    BenchmarkGetDiskKVStore-4             30          44017416 ns/op   ->  44 ms
+    BenchmarkPutMemKVStore-4         1000000              1385 ns/op   -> 1,3 µs
+    BenchmarkGetMemKVStore-4         2000000               711 ns/op   -> 0,7 µs

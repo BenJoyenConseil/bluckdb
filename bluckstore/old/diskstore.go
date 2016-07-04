@@ -46,7 +46,7 @@ func (store *DiskKVStore) Put(k, value string)  {
 	writer.Flush()
 }
 
-func NewDiskStore() KVStore {
+func NewDiskStore() *DiskKVStore {
 
 	for i := 0; i < BUCKET_NUMER; i++ {
 		file := buildPartitionFilePathString(util.String(strconv.Itoa(i)))
