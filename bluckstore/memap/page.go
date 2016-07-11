@@ -69,3 +69,9 @@ func (p Page) put(k, v string) error{
 		return errors.New("The page is full. use = " + strconv.Itoa(p.use()))
 	}
 }
+
+func (p Page) remove(offset, size int) {
+	for i := offset + size; i < p.use(); i++ {
+		p[i - size] = p[i]
+	}
+}
