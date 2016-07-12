@@ -195,7 +195,7 @@ func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testin
 	assert.Equal(t, errors.New("The page is full. use = 4080"), result)
 }
 
-func TestRemove_ShouldShiftRecordsAfterTheRemovedOne_UntilPageUse(t *testing.T) {
+func TestShift_ShouldShiftRecordsAfterTheRemovedOne_UntilPageUse(t *testing.T) {
 	// Given
 	var p Page = make([]byte, 4096)
 	binary.LittleEndian.PutUint16(p[4094:], 31)
@@ -215,9 +215,81 @@ func TestRemove_ShouldShiftRecordsAfterTheRemovedOne_UntilPageUse(t *testing.T) 
 	offset := 0
 	size := 14
 	// When
-	p.remove(offset, size)
+	p.shift(offset, size)
 
 	// Then
 	assert.Equal(t, "key2", string(p[4:8]))
 	assert.Equal(t, "Yolo 2 !!", string(p[8:17]))
+}
+
+func TestShift_ShouldMinusPageUseWithTheRemovedRecordPayload(t *testing.T) {
+	// Given
+	var p Page = make([]byte, 4096)
+	binary.LittleEndian.PutUint16(p[4094:], 31)
+
+	offset := 0
+	size := 14
+	// When
+	p.shift(offset, size)
+
+	// Then
+	assert.Equal(t, 17, p.use())
+}
+
+func TestFind_ShouldReturnThe_OffsetOfRecord_lenKey_lenValue(t *testing.T) {
+	// Given
+	var p Page = make([]byte, 4096)
+	binary.LittleEndian.PutUint16(p[4094:], 28) // use
+
+	// insert a record
+	k := "key1"
+	v := "Yolo !"
+	binary.LittleEndian.PutUint16(p[0:], 4) // length of key
+	binary.LittleEndian.PutUint16(p[2:], 6) // length of value
+	copy(p[4:], k)
+	copy(p[8:], v)
+	// end record
+	// insert a record
+	k2 := "key2"
+	binary.LittleEndian.PutUint16(p[14:], 4) // length of key
+	binary.LittleEndian.PutUint16(p[16:], 6) // length of value
+	copy(p[18:], k2)
+	copy(p[22:], v)
+	// end record
+
+	// When
+	offset, lenK, lenV := p.find("key2")
+
+	// Then
+	assert.Equal(t, 14, offset)
+	assert.Equal(t, 4, lenK)
+	assert.Equal(t, 6, lenV)
+}
+
+func TestRemovet(t *testing.T) {
+	// Given
+	var p Page = make([]byte, 4096)
+	binary.LittleEndian.PutUint16(p[4094:], 28) // use
+
+	// insert a record
+	k := "key1"
+	v := "Yolo !"
+	binary.LittleEndian.PutUint16(p[0:], 4) // length of key
+	binary.LittleEndian.PutUint16(p[2:], 6) // length of value
+	copy(p[4:], k)
+	copy(p[8:], v)
+	// end record
+	// insert a record
+	k2 := "key2"
+	binary.LittleEndian.PutUint16(p[14:], 4) // length of key
+	binary.LittleEndian.PutUint16(p[16:], 6) // length of value
+	copy(p[18:], k2)
+	copy(p[22:], v)
+	// end record
+
+	// When
+	p.remove("key2")
+
+	// Then
+	assert.Equal(t, 14, p.use())
 }
