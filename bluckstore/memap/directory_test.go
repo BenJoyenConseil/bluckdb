@@ -9,7 +9,6 @@ import (
 	"os"
 	"github.com/edsrzf/mmap-go"
 	"io/ioutil"
-	"fmt"
 )
 
 func TestDirectory_ExtendibleHash(t *testing.T) {
@@ -264,7 +263,6 @@ func TestDirectory_Put_ShouldWriteMetaFileOnDisk_WhenTableIsExpanded(t *testing.
 	// Then
 	result, _ := ioutil.ReadFile(metaFPath)
 	assert.NotEmpty(t, result)
-	fmt.Println([]byte(result))
 
 	os.Remove(fPath)
 	os.Remove(metaFPath)
@@ -287,13 +285,13 @@ func TestDirectory_Put_SameKey(t *testing.T) {
 	defer dir.data.Unmap()
 
 	// When
-	for i := 0; i < 4000; i++ {
+	for i := 0; i < 5; i++ {
 
-		dir.put("key", "Yolo !")
+		dir.put("key", "Yolo ! " + strconv.Itoa(i))
 	}
 
 	// Then BOUM !!!
-
+	assert.Equal(t, "Yolo ! 4", dir.get("key"))
 	os.Remove(fPath)
 }
 

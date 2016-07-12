@@ -81,10 +81,11 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 
 
 func (dir *Directory) put(key, value string) {
-	if dir.get(key) != "" {
-		return
-	}
 	page, id := dir.getPage(key)
+	offset, lenK, lenV := page.find(key)
+	if offset + lenK + lenV != 0 {
+		page.remove(key)
+	}
 	err := page.put(key, value)
 
 	if err != nil {

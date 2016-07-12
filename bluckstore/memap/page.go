@@ -1,10 +1,11 @@
 package memap
 
 import (
-	"encoding/binary"
-	"errors"
-	"strconv"
+"encoding/binary"
+"errors"
+"strconv"
 )
+const TOTAL_HEADERS_SIZE = 4
 
 /*
  A page is an array of 4096 bytes (the same size as the SSD Hard Drive default configuration on Linux)
@@ -37,19 +38,9 @@ func (p Page) setLd(v int) {
 }
 
 func (p Page) get(k string) string {
-	for i := 0; i < p.use(); {
+	offset, lenK, lenV := p.find(k)
 
-		lenKey := int(binary.LittleEndian.Uint16(p[i : i + 2]))
-		lenVal := int(binary.LittleEndian.Uint16(p[i + 2 : i + 4]))
-
-		currentKey := string(p[i + 4 : i + 4 + lenKey])
-		if currentKey == k {
-			return string(p[ i + 4 + lenKey : i + 4 + lenKey + lenVal])
-		}else {
-			i += 4 + lenKey + lenVal
-		}
-	}
-	return ""
+	return string(p[offset + TOTAL_HEADERS_SIZE + lenK : offset + TOTAL_HEADERS_SIZE + lenK + lenV])
 }
 
 func (p Page) put(k, v string) error{
@@ -68,4 +59,38 @@ func (p Page) put(k, v string) error{
 	} else {
 		return errors.New("The page is full. use = " + strconv.Itoa(p.use()))
 	}
+}
+
+func (p Page) remove(k string) {
+	offset, lenK, lenV := p.find(k)
+	p.shift(offset, TOTAL_HEADERS_SIZE + lenK + lenV)
+}
+
+func (p Page) shift(offset, size int) {
+	for i := offset + size; i < p.use(); i++ {
+		p[i - size] = p[i]
+	}
+	binary.LittleEndian.PutUint16(p[4094:], uint16(p.use() - size))
+}
+
+func (p Page) find(k string) (offset, lenK, lenV int) {
+	l := len(k)
+
+	for i := 0; i < p.use(); {
+
+		lenK = int(binary.LittleEndian.Uint16(p[i : i + 2]))
+
+		if l == lenK {
+			currentKey := string(p[i + TOTAL_HEADERS_SIZE : i + TOTAL_HEADERS_SIZE + lenK])
+			lenV = int(binary.LittleEndian.Uint16(p[i + 2 : i + TOTAL_HEADERS_SIZE]))
+			if currentKey == k {
+				return i, lenK, lenV
+			} else {
+				i += TOTAL_HEADERS_SIZE + lenK + lenV
+			}
+		} else {
+			i += TOTAL_HEADERS_SIZE + lenK + lenV
+		}
+	}
+	return 0, 0, 0
 }
