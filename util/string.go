@@ -14,8 +14,11 @@ func (self String) Equals(other Hashable) bool {
 	}
 }
 
+// TODO : use Murmur3 ?
+var h = fnv.New32a()
+
 func (str String) Hash() int {
-	h := fnv.New32a()
-	h.Write([]byte(string(str)))
+	h.Reset()
+	h.Write([]byte(str))
 	return int(h.Sum32())
 }
