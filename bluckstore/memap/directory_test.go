@@ -20,8 +20,8 @@ func TestDirectory_ExtendibleHash(t *testing.T) {
 	key2 := "123" //  1011
 
 	// When
-	result := d.extendibleHash(util.String(key))
-	result2 := d.extendibleHash(util.String(key2))
+	result := d.extendibleHash(util.Key(key))
+	result2 := d.extendibleHash(util.Key(key2))
 
 	// Then
 	assert.Equal(t, 3, result)
@@ -54,14 +54,15 @@ func TestDirectory_Get(t *testing.T) {
 		table: make([]int, 16),
 		data: make([]byte, 4096 * 4),
 	}
-	key := "123" //   1011
 	d.table[11] = 2
-	fileOffset := 2 * 4096
-	binary.LittleEndian.PutUint16(d.data[fileOffset + 4094:], 9)
-	binary.LittleEndian.PutUint16(d.data[fileOffset:], 3)
-	binary.LittleEndian.PutUint16(d.data[fileOffset + 2:], 2)
-	copy(d.data[fileOffset + 4:], []byte(key))
-	copy(d.data[fileOffset + 7:], []byte("Hi"))
+	pageOffset := 2 * 4096
+	binary.LittleEndian.PutUint16(d.data[pageOffset + 4094:], 9) // use
+
+	binary.LittleEndian.PutUint16(d.data[pageOffset + 7:], 3) // keyLen
+	binary.LittleEndian.PutUint16(d.data[pageOffset + 5:], 2) // valLen
+	key := "123" //   1011
+	copy(d.data[pageOffset:], []byte(key))
+	copy(d.data[pageOffset + 3:], []byte("Hi"))
 
 	// When
 	result := d.get(key)
@@ -98,9 +99,29 @@ func TestDirectory_Split(t *testing.T) {
 	p1, p2 := d.split(page)
 
 	// Then
-	assert.Equal(t, "key0value yop yop", string(p1[4:21]))
+	assert.Equal(t, "key0value yop yop", string(p1[0:17]))
 	assert.Equal(t, 21, p1.use())
-	assert.Equal(t, "key1value yop yop", string(p2[4:21]))
+	assert.Equal(t, "key1value yop yop", string(p2[0:17]))
+	assert.Equal(t, 21, p2.use())
+}
+
+func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
+	// Given
+	d := &Directory{
+		gd: 1,
+	}
+	page := Page(make([]byte, 4096))
+	page.setLd(0)
+	fillPage(page, 2)
+	page.put("key0", "value updated")
+
+	// When
+	p1, p2 := d.split(page)
+
+	// Then
+	assert.Equal(t, "key0value updated", string(p1[0:17]))
+	assert.Equal(t, 21, p1.use())
+	assert.Equal(t, "key1value yop yop", string(p2[0:17]))
 	assert.Equal(t, 21, p2.use())
 }
 
@@ -170,9 +191,9 @@ func TestDirectory_Put(t *testing.T) {
 	dir.put("123", "Yolo !")
 
 	// Then
-	buf := make([]byte, 9)
-	dir.dataFile.ReadAt(buf, 109)
-	assert.Equal(t, "123Yolo !", string(buf))
+	result := make([]byte, 9)
+	dir.dataFile.ReadAt(result, 105)
+	assert.Equal(t, "123Yolo !", string(result))
 	os.Remove(fPath)
 }
 
@@ -190,15 +211,16 @@ func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 	dir.table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
+
 	var page Page = Page(dir.data[0:4096])
-	fillPage(page, 5)
-	binary.LittleEndian.PutUint16(page[4094:], 4090)    // full
+	fillPage(page, 182)  // set Page to 4076
 
 	// When
-	dir.put("123", "Yolo !")
+	dir.put("12345678", "Yolo !")
 
 	// Then
 	assert.Equal(t, 8192, len(dir.data))
+	assert.Equal(t, 1, int(dir.gd))
 	assert.Equal(t, 1, Page(dir.data[:4096]).ld())
 	assert.Equal(t, 1, Page(dir.data[4096:8192]).ld())
 	os.Remove(fPath)
@@ -267,7 +289,6 @@ func TestDirectory_Put_ShouldWriteMetaFileOnDisk_WhenTableIsExpanded(t *testing.
 	os.Remove(fPath)
 	os.Remove(metaFPath)
 }
-
 
 func TestDirectory_Put_SameKey(t *testing.T) {
 	// Given

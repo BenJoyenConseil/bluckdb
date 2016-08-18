@@ -48,7 +48,7 @@ func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
     assert.Equal(t, "/tmp/data.db", store.dir.dataFile.Name())
     assert.Equal(t, []int{0}, store.dir.table)
     assert.Equal(t, 0, int(store.dir.gd))
-    assert.Equal(t, "KEYVALUE", string(store.dir.data[4:12]))
+    assert.Equal(t, "KEYVALUE", string(store.dir.data[0:8]))
     store.Close()
 }
 
@@ -65,20 +65,13 @@ func TestStoreUnMarshallMeta(t *testing.T) {
     assert.Equal(t, []int{0, 1}, table)
 }
 
-func fill(page Page) {
-    for i := 0; i < 185; i++ {
-        itoa := strconv.Itoa(i)
-        page.put("key"+itoa, "value yop yop")
-    }
-}
-
 func BenchmarkMemapPut(b *testing.B) {
     store := &MmapKVStore{}
     store.Open()
     defer store.Close()
     size := 1000000
 
-
+    b.ResetTimer()
     for n := 0; n < b.N; n++ {
         store.Put(strconv.Itoa(rand.Intn(size - 1)), "mec, elle est où ma caisse ??")
     }

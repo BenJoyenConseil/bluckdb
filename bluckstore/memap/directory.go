@@ -3,7 +3,7 @@ package memap
 import (
 	"github.com/edsrzf/mmap-go"
 	"os"
-"github.com/BenJoyenConseil/bluckdb/util"
+	"github.com/BenJoyenConseil/bluckdb/util"
 	"encoding/binary"
 )
 
@@ -22,14 +22,15 @@ func (dir *Directory) extendibleHash(k util.Hashable) int {
 }
 
 func (dir *Directory) getPage(k string) (Page, int) {
-	id := dir.table[dir.extendibleHash(util.String(k))]
+	id := dir.table[dir.extendibleHash(util.Key(k))]
 	offset := id * 4096
 	return Page(dir.data[offset : offset + 4096]), id
 }
 
 func (dir *Directory) get(k string) string {
 	p, _ := dir.getPage(k)
-	return p.get(k)
+	val,_ := p.get(k)
+	return  val
 }
 
 func (dir *Directory) expand() {
@@ -38,19 +39,27 @@ func (dir *Directory) expand() {
 }
 
 func (dir *Directory) split(page Page) (p1, p2 Page) {
+	lookup := make(map[string]bool)
 	p1 = make([]byte, 4096)
 	p2 = make([]byte, 4096)
 
-	it := &PageIterator{p: page, current: 0}
+	it := &PageIterator{p: page, current: page.use()}
 
 	for it.hasNext() {
-		k, v := it.next()
-		h := util.String(k).Hash() & (( 1 << dir.gd) -1)
+		r := it.next()
+		k := string(r.Key())
+		if _, ok := lookup[k]; ok {
+			// this record is skipped because a younger version exists
+			continue
+		} else {
+			lookup[k] = true
+		}
+		h := util.Key(k).Hash() & (( 1 << dir.gd) -1)
 
 		if (h >> uint(page.ld())) & 1 == 1 {
-			p2.put(k, v)
+			p2.put(k, string(r.Val()))
 		} else {
-			p1.put(k, v)
+			p1.put(k, string(r.Val()))
 		}
 	}
 	return p1, p2
@@ -82,13 +91,10 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 
 func (dir *Directory) put(key, value string) {
 	page, id := dir.getPage(key)
-	offset, lenK, lenV := page.find(key)
-	if offset + lenK + lenV != 0 {
-		page.remove(key)
-	}
 	err := page.put(key, value)
 
 	if err != nil {
+		// log trace err.Error()
 		if uint(page.ld()) == dir.gd {
 			dir.expand()
 		}

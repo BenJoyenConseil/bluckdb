@@ -5,54 +5,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"encoding/binary"
 	"errors"
+	"strconv"
 )
-
-func TestUse(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-	p[4094] = 0x3
-	p[4095] = 0x0
-
-	// When
-	result := p.use()
-
-	// Then
-	assert.Equal(t, 3, result)
-}
-
-func TestAdd(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-
-	// When
-	p.add('Y')
-
-	// Then
-	assert.Equal(t, byte('Y'), p[0])
-}
-
-func TestAdd_shouldIncrementUse(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-
-	// When
-	p.add('Y')
-
-	// Then
-	assert.Equal(t, 1, p.use())
-}
-
-func TestAddMany(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-
-	// When
-	p.add([]byte{'Y', 'o', 'l', 'o'}...)
-	result := string(p[0:4])
-
-	// Then
-	assert.Equal(t, "Yolo", result)
-}
 
 func TestRest_DefaultIs4092(t *testing.T) {
 	// Given
@@ -106,22 +60,23 @@ func TestSetLd(t *testing.T) {
 func TestGet(t *testing.T) {
 	// Given
 	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 16) // use
+	binary.LittleEndian.PutUint16(p[4094:], 14) // use
 
 	// insert a record
 	k := "key1"
 	v := "Yolo !"
-	binary.LittleEndian.PutUint16(p[0:], 4) // length of key
-	binary.LittleEndian.PutUint16(p[2:], 6) // length of value
-	copy(p[4:], k)
-	copy(p[8:], v)
+	binary.LittleEndian.PutUint16(p[12:], 4) // length of key
+	binary.LittleEndian.PutUint16(p[10:], 6) // length of value
+	copy(p[0:], k)
+	copy(p[4:], v)
 	// end record
 
 	// When
-	result := p.get(k)
+	result, err := p.get("key1")
 
 	// Then
 	assert.Equal(t, "Yolo !", string(result))
+	assert.Nil(t, err)
 }
 
 func TestGet_ShouldReturnEmptyStringWhenKeyDoesntExist(t *testing.T) {
@@ -132,17 +87,18 @@ func TestGet_ShouldReturnEmptyStringWhenKeyDoesntExist(t *testing.T) {
 	// insert a record
 	k := "key1"
 	v := "Yolo !"
-	binary.LittleEndian.PutUint16(p[0:], 4) // length of key
-	binary.LittleEndian.PutUint16(p[2:], 6) // length of value
-	copy(p[6:], k)
-	copy(p[8:], v)
+	binary.LittleEndian.PutUint16(p[12:], 4) // length of key
+	binary.LittleEndian.PutUint16(p[10:], 6) // length of value
+	copy(p[0:], k)
+	copy(p[4:], v)
 	// end record
 
 	// When
-	result := p.get("key321")
+	result, err := p.get("key321")
 
 	// Then
 	assert.Empty(t, string(result))
+	assert.Error(t, err)
 }
 
 func TestPut_UseShouldBeIncrementedWithThePayloadOfTheNewRecord(t *testing.T) {
@@ -166,19 +122,25 @@ func TestPut_(t *testing.T) {
 
 	// When
 	p.put(k, v)
+	p.put(k, "Yolo updated !")
 
 	// Then
-	lenKey := []byte(p[0:2])
-	assert.Equal(t, []byte{0x4, 0x0}, lenKey) // {0x4, 0x0} : LittleEndian style
+	lenKey := binary.LittleEndian.Uint16(p[12:14])
+	assert.Equal(t, uint16(4), lenKey) // {0x4, 0x0} : LittleEndian
 
-	lenVal := []byte(p[2:4])
-	assert.Equal(t, []byte{0x6, 0x0}, lenVal)
+	lenVal := binary.LittleEndian.Uint16(p[10:12])
+	assert.Equal(t, uint16(6), lenVal)
 
-	rKey := []byte(p[4:8])
-	assert.Equal(t, []byte{'k', 'e', 'y', '1'}, rKey)
+	rKey := string(p[0:4])
+	assert.Equal(t, "key1", rKey)
 
-	rVal := []byte(p[8:14])
-	assert.Equal(t, []byte{'Y', 'o', 'l', 'o', ' ', '!'}, rVal)
+	rVal := string(p[4:10])
+	assert.Equal(t, "Yolo !", rVal)
+
+	lenVal = binary.LittleEndian.Uint16(p[32:34])
+	assert.Equal(t, uint16(14), lenVal)
+	rVal = string(p[18:32])
+	assert.Equal(t, "Yolo updated !", rVal)
 }
 
 func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testing.T) {
@@ -195,101 +157,12 @@ func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testin
 	assert.Equal(t, errors.New("The page is full. use = 4080"), result)
 }
 
-func TestShift_ShouldShiftRecordsAfterTheRemovedOne_UntilPageUse(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 31)
-	k := "key"
-	k2 := "key2"
-	v := "Yolo !!"
-	v2 := "Yolo 2 !!"
-	binary.LittleEndian.PutUint16(p[0:], 3) // length of key
-	binary.LittleEndian.PutUint16(p[2:], 7) // length of value
-	copy(p[6:], k)
-	copy(p[8:], v)
-	binary.LittleEndian.PutUint16(p[14:], 4) // length of key
-	binary.LittleEndian.PutUint16(p[16:], 9) // length of value
-	copy(p[18:], k2)
-	copy(p[22:], v2)
-
-	offset := 0
-	size := 14
-	// When
-	p.shift(offset, size)
-
-	// Then
-	assert.Equal(t, "key2", string(p[4:8]))
-	assert.Equal(t, "Yolo 2 !!", string(p[8:17]))
-}
-
-func TestShift_ShouldMinusPageUseWithTheRemovedRecordPayload(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 31)
-
-	offset := 0
-	size := 14
-	// When
-	p.shift(offset, size)
-
-	// Then
-	assert.Equal(t, 17, p.use())
-}
-
-func TestFind_ShouldReturnThe_OffsetOfRecord_lenKey_lenValue(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 28) // use
-
-	// insert a record
-	k := "key1"
-	v := "Yolo !"
-	binary.LittleEndian.PutUint16(p[0:], 4) // length of key
-	binary.LittleEndian.PutUint16(p[2:], 6) // length of value
-	copy(p[4:], k)
-	copy(p[8:], v)
-	// end record
-	// insert a record
-	k2 := "key2"
-	binary.LittleEndian.PutUint16(p[14:], 4) // length of key
-	binary.LittleEndian.PutUint16(p[16:], 6) // length of value
-	copy(p[18:], k2)
-	copy(p[22:], v)
-	// end record
-
-	// When
-	offset, lenK, lenV := p.find("key2")
-
-	// Then
-	assert.Equal(t, 14, offset)
-	assert.Equal(t, 4, lenK)
-	assert.Equal(t, 6, lenV)
-}
-
-func TestRemovet(t *testing.T) {
-	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 28) // use
-
-	// insert a record
-	k := "key1"
-	v := "Yolo !"
-	binary.LittleEndian.PutUint16(p[0:], 4) // length of key
-	binary.LittleEndian.PutUint16(p[2:], 6) // length of value
-	copy(p[4:], k)
-	copy(p[8:], v)
-	// end record
-	// insert a record
-	k2 := "key2"
-	binary.LittleEndian.PutUint16(p[14:], 4) // length of key
-	binary.LittleEndian.PutUint16(p[16:], 6) // length of value
-	copy(p[18:], k2)
-	copy(p[22:], v)
-	// end record
-
-	// When
-	p.remove("key2")
-
-	// Then
-	assert.Equal(t, 14, p.use())
+func BenchmarkPagePut(b *testing.B) {
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		var p Page = make([]byte, 4096)
+		for i := 0; i < 120; i++ {
+			p.put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
+		}
+	}
 }
