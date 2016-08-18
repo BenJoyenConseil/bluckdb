@@ -24,8 +24,43 @@ func TestByteRecord_Key(t *testing.T) {
 	assert.Equal(t, "12345", string(result))
 }
 
+
+func TestByteRecord_Key_WhenSliceIsBiggerThanRecord(t *testing.T) {
+	// Given
+	var r ByteRecord = ByteRecord([]byte{
+		0, 0, 0, 0, 0, 0,
+		'1', '2', '3', '4', '5',
+		'Y', 'o', 'l', 'o',
+		0x4, 0x0,
+		0x5, 0x0,
+	})
+
+	// When
+	result := r.Key()
+
+	// Then
+	assert.Equal(t, "12345", string(result))
+}
+
 func TestByteRecord_Val(t *testing.T) {
 	// Given
+
+	// When
+	result := r.Val()
+
+	// Then
+	assert.Equal(t, "Yolo", string(result))
+}
+
+func TestByteRecord_Val_WhenSliceIsBiggerThanRecord(t *testing.T) {
+	// Given
+	var r ByteRecord = ByteRecord([]byte{
+		0, 0, 0, 0, 0, 0,
+		'1', '2', '3', '4', '5',
+		'Y', 'o', 'l', 'o',
+		0x4, 0x0,
+		0x5, 0x0,
+	})
 
 	// When
 	result := r.Val()
@@ -54,7 +89,7 @@ func TestByteRecord_ValLen(t *testing.T) {
 	assert.Equal(t, uint16(4), result)
 }
 
-func TestByteRecord_SetKey(t *testing.T) {
+func TestByteRecord_Write(t *testing.T) {
 	// Given
 	r = ByteRecord(make([]byte, 14))
 
