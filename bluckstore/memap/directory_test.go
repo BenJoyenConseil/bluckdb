@@ -9,12 +9,14 @@ import (
 	"os"
 	"github.com/edsrzf/mmap-go"
 	"io/ioutil"
+	"bytes"
+	"encoding/gob"
 )
 
 func TestDirectory_ExtendibleHash(t *testing.T) {
 	// Given
 	d := &Directory{
-		gd: 4, // 4 bytes of the key.Hash will be used to distribute keys
+		Gd: 4, // 4 bytes of the key.Hash will be used to distribute keys
 	}
 	key := "321" //   0011
 	key2 := "123" //  1011
@@ -31,12 +33,12 @@ func TestDirectory_ExtendibleHash(t *testing.T) {
 func TestDirectory_GetPage(t *testing.T) {
 	// Given
 	d := &Directory{
-		gd: 4, // means the table size is 2^4 length
-		table: make([]int, 16),
+		Gd: 4, // means the table size is 2^4 length
+		Table: make([]int, 16),
 		data: make([]byte, 4096 * 4),
 	}
 	key := "123" //   1011
-	d.table[11] = 2
+	d.Table[11] = 2
 
 	// When
 	page, idPage := d.getPage(key)
@@ -50,11 +52,11 @@ func TestDirectory_GetPage(t *testing.T) {
 func TestDirectory_Get(t *testing.T) {
 	// Given
 	d := &Directory{
-		gd: 4, // means we take 4 significant bytes of the hash result
-		table: make([]int, 16),
+		Gd: 4, // means we take 4 significant bytes of the hash result
+		Table: make([]int, 16),
 		data: make([]byte, 4096 * 4),
 	}
-	d.table[11] = 2
+	d.Table[11] = 2
 	pageOffset := 2 * 4096
 	binary.LittleEndian.PutUint16(d.data[pageOffset + 4094:], 9) // use
 
@@ -74,22 +76,22 @@ func TestDirectory_Get(t *testing.T) {
 func TestDirectory_Expand(t *testing.T) {
 	// Given
 	d := &Directory{
-		gd: 3,
-		table: make([]int, 8),
+		Gd: 3,
+		Table: make([]int, 8),
 	}
 
 	// When
 	d.expand()
 
 	// Then
-	assert.Equal(t, 16, len(d.table))
-	assert.Equal(t, 4, int(d.gd))
+	assert.Equal(t, 16, len(d.Table))
+	assert.Equal(t, 4, int(d.Gd))
 }
 
 func TestDirectory_Split(t *testing.T) {
 	// Given
 	d := &Directory{
-		gd: 1,
+		Gd: 1,
 	}
 	page := Page(make([]byte, 4096))
 	page.setLd(0)
@@ -108,7 +110,7 @@ func TestDirectory_Split(t *testing.T) {
 func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
 	// Given
 	d := &Directory{
-		gd: 1,
+		Gd: 1,
 	}
 	page := Page(make([]byte, 4096))
 	page.setLd(0)
@@ -128,7 +130,7 @@ func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
 func TestDirectory_NextPageId(t *testing.T) {
 	// Given
 	d := &Directory{
-		lastPageId: 29920,
+		LastPageId: 29920,
 	}
 
 	// When
@@ -141,9 +143,9 @@ func TestDirectory_NextPageId(t *testing.T) {
 func TestDirectoryReplace(t *testing.T)  {
 	// Given
 	dir := &Directory{
-		table:[]int{0, 1, 3, 2, 0, 1, 3, 2},
-		gd: 2,
-		lastPageId: 4,
+		Table:[]int{0, 1, 3, 2, 0, 1, 3, 2},
+		Gd: 2,
+		LastPageId: 4,
 	}
 
 	// When
@@ -157,17 +159,21 @@ func TestDirectoryReplace(t *testing.T)  {
 func TestDirectorySerializeMeta(t *testing.T)  {
 	// Given
 	dir := &Directory{
-		table:[]int{0, 1},
-		gd: 1,
-		lastPageId: 1,
+		Table:[]int{0, 1},
+		Gd: 1,
+		LastPageId: 1,
 	}
 
 	// When
 	result := dir.serializeMeta()
 
 	// Then
-	assert.Equal(t, []byte{0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x0, 0x0,}, result)
-	assert.Equal(t, 16, len(result))
+	buf := bytes.NewBuffer(result)
+	dec := gob.NewDecoder(buf)
+	resultDir := &Directory{}
+	dec.Decode(resultDir)
+
+	assert.EqualValues(t, dir, resultDir)
 }
 
 func TestDirectory_Put(t *testing.T) {
@@ -178,10 +184,10 @@ func TestDirectory_Put(t *testing.T) {
 	f.Write(make([]byte, 4096))
 	dir := &Directory{
 		dataFile: f,
-		gd: 0,
-		table: make([]int, 1),
+		Gd: 0,
+		Table: make([]int, 1),
 	}
-	dir.table[0] = 0
+	dir.Table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
 	var page Page = Page(dir.data[0:4096])
@@ -205,10 +211,10 @@ func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 	f.Write(make([]byte, 4096))
 	dir := &Directory{
 		dataFile: f,
-		gd: 0,
-		table: make([]int, 1),
+		Gd: 0,
+		Table: make([]int, 1),
 	}
-	dir.table[0] = 0
+	dir.Table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
 
@@ -220,7 +226,7 @@ func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 
 	// Then
 	assert.Equal(t, 8192, len(dir.data))
-	assert.Equal(t, 1, int(dir.gd))
+	assert.Equal(t, 1, int(dir.Gd))
 	assert.Equal(t, 1, Page(dir.data[:4096]).ld())
 	assert.Equal(t, 1, Page(dir.data[4096:8192]).ld())
 	os.Remove(fPath)
@@ -237,11 +243,11 @@ func TestDirectory_Put_INT(t *testing.T) {
 	f.Write(make([]byte, 4096))
 	dir := &Directory{
 		dataFile: f,
-		gd: 0,
-		table: make([]int, 1),
+		Gd: 0,
+		Table: make([]int, 1),
 		metaFile: metaF,
 	}
-	dir.table[0] = 0
+	dir.Table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
 
@@ -251,7 +257,7 @@ func TestDirectory_Put_INT(t *testing.T) {
 	}
 
 	// Then
-	assert.Equal(t, []int{0, 1, 2, 3, 5, 7, 6, 4, 15, 12, 8, 14, 10, 9, 13, 11, 0, 22, 2, 3, 18, 7, 25, 19, 20, 24, 16, 21, 10, 17, 23, 11}, dir.table)
+	assert.Equal(t, []int{0, 1, 2, 3, 5, 7, 6, 4, 15, 12, 8, 14, 10, 9, 13, 11, 0, 22, 2, 3, 18, 7, 25, 19, 20, 24, 16, 21, 10, 17, 23, 11}, dir.Table)
 
 	os.Remove(fPath)
 	os.Remove(metaFPath)
@@ -268,11 +274,11 @@ func TestDirectory_Put_ShouldWriteMetaFileOnDisk_WhenTableIsExpanded(t *testing.
 	f.Write(make([]byte, 4096))
 	dir := &Directory{
 		dataFile: f,
-		gd: 0,
-		table: make([]int, 1),
+		Gd: 0,
+		Table: make([]int, 1),
 		metaFile: metaF,
 	}
-	dir.table[0] = 0
+	dir.Table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
 
@@ -298,10 +304,10 @@ func TestDirectory_Put_SameKey(t *testing.T) {
 	f.Write(make([]byte, 4096))
 	dir := &Directory{
 		dataFile: f,
-		gd: 0,
-		table: make([]int, 1),
+		Gd: 0,
+		Table: make([]int, 1),
 	}
-	dir.table[0] = 0
+	dir.Table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
 
@@ -322,3 +328,37 @@ func fillPage(page Page, numberOfRecord int) {
 		page.put("key" + itoa, "value yop yop")
 	}
 }
+
+/*
+func TestDirectory_Gc(t *testing.T) {
+	// Given
+	fPath := "/tmp/test.db"
+	metaFPath := "/tmp/metaTest.db"
+	os.Remove(fPath)
+	os.Remove(metaFPath)
+	f, _ := os.OpenFile(fPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	metaF, _ := os.OpenFile(metaFPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	defer f.Close()
+	defer metaF.Close()
+	f.Write(make([]byte, 4096))
+	dir := &Directory{
+		dataFile: f,
+		Gd: 0,
+		Table: make([]int, 1),
+		metaFile: metaF,
+	}
+	dir.Table[0] = 0
+	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
+	defer dir.data.Unmap()
+
+	// When
+	for i := 0; i < 1000; i++ {
+
+		dir.put("key" + strconv.Itoa(rand.Intn(20)), "Yolo ! " + strconv.Itoa(i))
+	}
+
+	// Then BOUM !!!
+	assert.Equal(t, 1, len(dir.Table))
+	assert.Equal(t, 0, dir.Gd)
+	assert.Equal(t, 4096, len(dir.data))
+}*/

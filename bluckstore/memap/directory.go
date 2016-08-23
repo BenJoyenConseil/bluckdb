@@ -4,25 +4,26 @@ import (
 	"github.com/edsrzf/mmap-go"
 	"os"
 	"github.com/BenJoyenConseil/bluckdb/util"
-	"encoding/binary"
+	"bytes"
+	"encoding/gob"
 )
 
 type Directory struct {
-	table []int
+	Table []int
 	data mmap.MMap
-	gd uint
+	Gd uint
 	dataFile *os.File
 	metaFile *os.File
-	lastPageId int
+	LastPageId int
 }
 
 
 func (dir *Directory) extendibleHash(k util.Hashable) int {
-	return k.Hash() & (( 1 << dir.gd) -1)
+	return k.Hash() & (( 1 << dir.Gd) -1)
 }
 
 func (dir *Directory) getPage(k string) (Page, int) {
-	id := dir.table[dir.extendibleHash(util.Key(k))]
+	id := dir.Table[dir.extendibleHash(util.Key(k))]
 	offset := id * 4096
 	return Page(dir.data[offset : offset + 4096]), id
 }
@@ -34,8 +35,8 @@ func (dir *Directory) get(k string) string {
 }
 
 func (dir *Directory) expand() {
-	dir.table = append(dir.table, dir.table...)
-	dir.gd ++
+	dir.Table = append(dir.Table, dir.Table...)
+	dir.Gd ++
 }
 
 func (dir *Directory) split(page Page) (p1, p2 Page) {
@@ -54,7 +55,7 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 		} else {
 			lookup[k] = true
 		}
-		h := util.Key(k).Hash() & (( 1 << dir.gd) -1)
+		h := util.Key(k).Hash() & (( 1 << dir.Gd) -1)
 
 		if (h >> uint(page.ld())) & 1 == 1 {
 			p2.put(k, string(r.Val()))
@@ -66,22 +67,22 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 }
 
 func (dir *Directory) nextPageId() int {
-	dir.lastPageId ++
-	return dir.lastPageId
+	dir.LastPageId ++
+	return dir.LastPageId
 }
 
 func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 	p1Id := obsoletePageId
 	p2Id := dir.nextPageId()
 
-	for i := 0; i < len(dir.table); i++ {
-		if obsoletePageId != dir.table[i] {
+	for i := 0; i < len(dir.Table); i++ {
+		if obsoletePageId != dir.Table[i] {
 			continue
 		}
 		if (i >> ld) & 1 == 1 {
-			dir.table[i] = p2Id
+			dir.Table[i] = p2Id
 		} else {
-			dir.table[i] = p1Id
+			dir.Table[i] = p1Id
 		}
 	}
 	return p1Id, p2Id
@@ -94,11 +95,11 @@ func (dir *Directory) put(key, value string) {
 	err := page.put(key, value)
 
 	if err != nil {
-		// log trace err.Error()
-		if uint(page.ld()) == dir.gd {
+		// TODO : log trace err.Error()
+		if uint(page.ld()) == dir.Gd {
 			dir.expand()
 		}
-		if uint(page.ld()) < dir.gd {
+		if uint(page.ld()) < dir.Gd {
 
 			p1, p2 := dir.split(page)
 			id1, id2 := dir.replace(id, uint(page.ld()))
@@ -118,12 +119,9 @@ func (dir *Directory) put(key, value string) {
 }
 
 func (dir *Directory) serializeMeta() []byte {
-	data := make([]byte, len(dir.table) * 4 + 4 + 4)
-	binary.LittleEndian.PutUint32(data, uint32(dir.gd))
-	binary.LittleEndian.PutUint32(data[4:], uint32(dir.lastPageId))
-	for i := 0; i < len(dir.table); i++ {
+	var meta bytes.Buffer
+	enc := gob.NewEncoder(&meta)
 
-		binary.LittleEndian.PutUint32(data[8 + i * 4:], uint32(dir.table[i]))
-	}
-	return data
+	enc.Encode(dir)
+	return meta.Bytes()
 }
