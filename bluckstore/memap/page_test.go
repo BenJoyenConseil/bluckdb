@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"encoding/binary"
 	"errors"
-	"strconv"
 )
 
 func TestRest_DefaultIs4092(t *testing.T) {
@@ -158,11 +157,8 @@ func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testin
 }
 
 func BenchmarkPagePut(b *testing.B) {
-	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		var p Page = make([]byte, 4096)
-		for i := 0; i < 120; i++ {
-			p.put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
-		}
+		p.put("key", "mec, elle est où ma caisse ??")
 	}
 }

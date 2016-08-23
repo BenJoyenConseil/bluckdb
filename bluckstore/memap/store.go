@@ -4,7 +4,9 @@ import (
 	"os"
 	"github.com/edsrzf/mmap-go"
 	"fmt"
-	"encoding/binary"
+	"io/ioutil"
+	"encoding/gob"
+	"bytes"
 )
 
 type MmapKVStore struct {
@@ -25,30 +27,29 @@ func New() *MmapKVStore {
 func (store *MmapKVStore) Open() {
 	f, err := os.OpenFile("/tmp/" + FILE_NAME, os.O_RDWR | os.O_CREATE, 0644)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("OpenFile DB error : " + err.Error())
 		err = nil
 	}
 
 	metaFile, err := os.OpenFile("/tmp/" + META_FILE_NAME, os.O_RDWR | os.O_CREATE, 0644)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("OpenFile Meta error : " + err.Error())
 		err = nil
 	} else {
-		fStat, _ := metaFile.Stat()
-		metaContent := make([]byte, fStat.Size())
-		metaFile.Read(metaContent)
 
-		gd, lastId, table := UnMarshallMeta(metaContent)
-		if table != nil {
+		buf, err := ioutil.ReadFile("/tmp/" + META_FILE_NAME)
+		if err != nil {
+			fmt.Println("ReadFile error : " + err.Error())
+			err = nil
+		}
+		dec := gob.NewDecoder(bytes.NewBuffer(buf))
+		store.dir = &Directory{}
+		err = dec.Decode(&store.dir)
+		if err != nil {
+			fmt.Println("Decoding error : " + err.Error())
 			store.dir = &Directory{
-				table: table,
-				gd: gd,
-				lastPageId: lastId,
-			}
-		} else {
-			store.dir = &Directory{
-				gd: 0,
-				table: make([]int, 1),
+				Gd: 0,
+				Table: make([]int, 1),
 			}
 			f.Write(make([]byte, 4096))
 			metaFile.Write(store.dir.serializeMeta())
@@ -79,17 +80,7 @@ func (s *MmapKVStore) Close() {
 	s.dir.metaFile.Close()
 }
 
-
-
-func UnMarshallMeta(data []byte) (gd uint, lastId int, table []int) {
-	if len(data) <= 0 {
-		return 0, 0, nil
-	}
-	gd = uint(binary.LittleEndian.Uint32(data))
-	lastId = int(binary.LittleEndian.Uint32(data[4:]))
-	for i := 8; i < len(data) ; i += 4 {
-		id := int(binary.LittleEndian.Uint32(data[i:]))
-		table = append(table, id)
-	}
-	return gd, lastId, table
+func (s *MmapKVStore) Rm()  {
+	os.Remove("/tmp/" + FILE_NAME)
+	os.Remove("/tmp/" + META_FILE_NAME)
 }
