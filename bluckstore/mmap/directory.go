@@ -10,12 +10,12 @@ import (
 )
 
 type Directory struct {
-	Table []int
+	Table []int 	`json:"table"`
 	data mmap.MMap
-	Gd uint
+	Gd uint        	`json:"globalDepth"`
 	dataFile *os.File
 	metaFile *os.File
-	LastPageId int
+	LastPageId int 	`json:"LastPageId"`
 }
 
 
