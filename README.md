@@ -7,10 +7,12 @@ A Key/Value store implementation using the [extendible hashing](https://en.wikip
 The ``server.go`` file is a simple http server that answers on the 8080 port.
 
 
-There are two endpoints :
+There are 4 endpoints :
 
     http://hostname:2233/get?key=<some_key>
     http://hostname:2233/put?key=<some_key>&value=<some_value>
+    http://hostname:2233/meta
+    http://hostname:2233/debug?page_id=<id_of_the_page_to_display>
 
 
 ## the goal
