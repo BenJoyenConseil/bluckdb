@@ -15,6 +15,7 @@ type MmapKVStore struct {
 
 const FILE_NAME = "data.db"
 const META_FILE_NAME = "db.meta"
+const DB_DIRECTORY  = "/tmp/"
 
 func New() *MmapKVStore {
 	os.Remove("/tmp/" + FILE_NAME)
@@ -25,19 +26,19 @@ func New() *MmapKVStore {
 }
 
 func (store *MmapKVStore) Open() {
-	f, err := os.OpenFile("/tmp/" + FILE_NAME, os.O_RDWR | os.O_CREATE, 0644)
+	f, err := os.OpenFile(DB_DIRECTORY + FILE_NAME, os.O_RDWR | os.O_CREATE, 0644)
 	if err != nil {
 		fmt.Println("OpenFile DB error : " + err.Error())
 		err = nil
 	}
 
-	metaFile, err := os.OpenFile("/tmp/" + META_FILE_NAME, os.O_RDWR | os.O_CREATE, 0644)
+	metaFile, err := os.OpenFile(DB_DIRECTORY + META_FILE_NAME, os.O_RDWR | os.O_CREATE, 0644)
 	if err != nil {
 		fmt.Println("OpenFile Meta error : " + err.Error())
 		err = nil
 	} else {
 
-		buf, err := ioutil.ReadFile("/tmp/" + META_FILE_NAME)
+		buf, err := ioutil.ReadFile(DB_DIRECTORY + META_FILE_NAME)
 		if err != nil {
 			fmt.Println("ReadFile error : " + err.Error())
 			err = nil
@@ -81,6 +82,6 @@ func (s *MmapKVStore) Close() {
 }
 
 func (s *MmapKVStore) Rm()  {
-	os.Remove("/tmp/" + FILE_NAME)
-	os.Remove("/tmp/" + META_FILE_NAME)
+	os.Remove(DB_DIRECTORY + FILE_NAME)
+	os.Remove(DB_DIRECTORY + META_FILE_NAME)
 }

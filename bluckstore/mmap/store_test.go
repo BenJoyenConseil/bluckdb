@@ -30,7 +30,7 @@ func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
 }
 
 func BenchmarkMmapPut(b *testing.B) {
-    devNull, _ := os.Open(os.DevNull)
+    /*devNull, _ := os.Open(os.DevNull)
     store := &MmapKVStore{
         dir: &Directory{
             Table: make([]int, 1),
@@ -39,10 +39,11 @@ func BenchmarkMmapPut(b *testing.B) {
             Gd: 0,
             data: make([]byte, 4096),
         },
-    }
-    /*store.Rm()
+    }*/
+    store := &MmapKVStore{}
+    store.Rm()
     store.Open()
-    defer store.Close()*/
+    defer store.Close()
 
     b.ResetTimer()
     for n := 0; n < b.N; n++ {
