@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 	"fmt"
-	"github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
+	mmap "github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
 )
 
 func main() {
