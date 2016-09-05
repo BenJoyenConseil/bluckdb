@@ -29,17 +29,35 @@ func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
     store.Close()
 }
 
-func BenchmarkMemapPut(b *testing.B) {
-    store := &MmapKVStore{}
-    store.Rm()
+func BenchmarkMmapPut(b *testing.B) {
+    devNull, _ := os.Open(os.DevNull)
+    store := &MmapKVStore{
+        dir: &Directory{
+            Table: make([]int, 1),
+            dataFile: devNull,
+            metaFile: devNull,
+            Gd: 0,
+            data: make([]byte, 4096),
+        },
+    }
+    /*store.Rm()
     store.Open()
-    defer store.Close()
+    defer store.Close()*/
 
     b.ResetTimer()
     for n := 0; n < b.N; n++ {
         store.Put(strconv.Itoa(n), "mec, elle est où ma caisse ??")
     }
 
+}
+
+func BenchmarkHashmapPut(b *testing.B) {
+    store := make(map[string]string)
+
+    b.ResetTimer()
+    for n := 0; n < b.N; n++ {
+        store[strconv.Itoa(n)] = "mec, elle est où ma caisse ??"
+    }
 }
 
 func setup(){
@@ -53,8 +71,8 @@ func setup(){
     store.Close()
 }
 
-func BenchmarkMemapGet(b *testing.B) {
-    setup()
+func BenchmarkMmapGet(b *testing.B) {
+    //setup()
     store := &MmapKVStore{}
     store.Open()
     defer store.Close()
@@ -62,5 +80,20 @@ func BenchmarkMemapGet(b *testing.B) {
     b.ResetTimer()
     for n := 0; n < b.N; n++ {
         store.Get(strconv.Itoa(rand.Intn(10000 - 1)))
+    }
+}
+
+func BenchmarkHashmapGet(b *testing.B) {
+    store := make(map[string]string)
+    size := 10000
+    for i := 0; i < size; i++ {
+        store[strconv.Itoa(i)] = "mec, elle est où ma caisse ??"
+    }
+    devNull, _ := os.Open(os.DevNull)
+    defer devNull.Close()
+
+    b.ResetTimer()
+    for n := 0; n < b.N; n++ {
+        devNull.Write([]byte(store[strconv.Itoa(rand.Intn(10000 - 1))]))
     }
 }

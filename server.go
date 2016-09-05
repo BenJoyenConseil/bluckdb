@@ -3,13 +3,13 @@ package main
 import (
 	"net/http"
 	"fmt"
-	"github.com/BenJoyenConseil/bluckdb/bluckstore/memap"
+	"github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
 )
 
 func main() {
 
 
-	store := &memap.MmapKVStore{}
+	store := &mmap.MmapKVStore{}
 	store.Open()
 	defer store.Close()
 	http.HandleFunc("/get", func(w http.ResponseWriter, r *http.Request) {

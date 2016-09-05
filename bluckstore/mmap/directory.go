@@ -6,6 +6,7 @@ import (
 	"github.com/BenJoyenConseil/bluckdb/util"
 	"bytes"
 	"encoding/gob"
+	"fmt"
 )
 
 type Directory struct {
@@ -95,7 +96,7 @@ func (dir *Directory) put(key, value string) {
 	err := page.put(key, value)
 
 	if err != nil {
-		// TODO : log trace err.Error()
+		// TODO : log trace err
 		if uint(page.ld()) == dir.Gd {
 			dir.expand()
 		}
@@ -109,7 +110,10 @@ func (dir *Directory) put(key, value string) {
 			dir.dataFile.WriteAt(p1, int64(id1 * 4096))
 			dir.dataFile.WriteAt(p2, int64(id2 * 4096))
 			dir.data.Unmap()
-			dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
+			dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR, 0)
+			if err != nil {
+				fmt.Println(err)
+			}
 			dir.put(key, value)
 			dir.metaFile.WriteAt(dir.serializeMeta(), 0)
 

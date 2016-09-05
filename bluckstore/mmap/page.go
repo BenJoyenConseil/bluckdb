@@ -36,11 +36,15 @@ func (p Page) get(k string) (v string, err error) {
 		current: p.use(),
 		p: p,
 	}
-
+	l := uint16(len(k))
+	var r Record = nil
 	for it.hasNext() {
-		r := it.next()
-		if bytes.Compare(r.Key(), []byte(k)) == 0 {
-			return string(r.Val()), nil
+		r = it.next()
+
+		if l == r.KeyLen() {
+			if bytes.Compare(r.Key(), []byte(k)) == 0 {
+				return string(r.Val()), nil
+			}
 		}
 	}
 
