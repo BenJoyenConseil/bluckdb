@@ -1,19 +1,14 @@
 package main
 
 import (
-	"net/http"
 	"fmt"
 	mmap "github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
-	"encoding/json"
-	"encoding/gob"
-	"bytes"
-	"io/ioutil"
+	"net/http"
 	"os"
 	"strconv"
 )
 
 func main() {
-
 
 	store := &mmap.MmapKVStore{}
 	store.Open()
@@ -37,20 +32,7 @@ func main() {
 	})
 
 	http.HandleFunc("/meta", func(w http.ResponseWriter, r *http.Request) {
-		buf, err := ioutil.ReadFile(mmap.DB_DIRECTORY + mmap.META_FILE_NAME)
-		if err != nil {
-			fmt.Fprint(w, "ReadFile META FILE error : " + err.Error())
-			return
-		}
-		dec := gob.NewDecoder(bytes.NewBuffer(buf))
-		dir := &mmap.Directory{}
-		err = dec.Decode(&dir)
-		if err != nil {
-			fmt.Fprint(w, "Decoding META file error : " + err.Error())
-			return
-		}
-		jsonEnc := json.NewEncoder(w)
-		jsonEnc.Encode(dir)
+		fmt.Fprint(w, store.Dir)
 	})
 
 	http.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
@@ -58,17 +40,17 @@ func main() {
 		r.ParseForm()
 		pageId, err := strconv.Atoi(r.Form.Get("page_id"))
 		if err != nil {
-			fmt.Fprint(w, "Unable to parse page_id : " + err.Error())
+			fmt.Fprint(w, "Unable to parse page_id : "+err.Error())
 			return
 		}
 
 		f, err := os.Open(mmap.DB_DIRECTORY + mmap.FILE_NAME)
 		if err != nil {
-			fmt.Fprint(w, "ReadFile DATA FILE error : " + err.Error())
+			fmt.Fprint(w, "ReadFile DATA FILE error : "+err.Error())
 			return
 		}
 		buff := make([]byte, 4096)
-		f.ReadAt(buff, int64(pageId * 4096))
+		f.ReadAt(buff, int64(pageId*4096))
 		fmt.Fprint(w, string(buff))
 	})
 

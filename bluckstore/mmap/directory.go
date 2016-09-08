@@ -1,43 +1,43 @@
 package memap
 
 import (
-	"github.com/edsrzf/mmap-go"
-	"os"
-	"github.com/BenJoyenConseil/bluckdb/util"
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"github.com/BenJoyenConseil/bluckdb/util"
+	"github.com/edsrzf/mmap-go"
+	"os"
 )
 
 type Directory struct {
-	Table []int 	`json:"table"`
-	data mmap.MMap
-	Gd uint        	`json:"globalDepth"`
-	dataFile *os.File
-	metaFile *os.File
-	LastPageId int 	`json:"LastPageId"`
+	Table      []int `json:"table"`
+	data       mmap.MMap
+	Gd         uint `json:"globalDepth"`
+	dataFile   *os.File
+	metaFile   *os.File
+	LastPageId int `json:"LastPageId"`
 }
 
-
 func (dir *Directory) extendibleHash(k util.Hashable) int {
-	return k.Hash() & (( 1 << dir.Gd) -1)
+	return k.Hash() & ((1 << dir.Gd) - 1)
 }
 
 func (dir *Directory) getPage(k string) (Page, int) {
 	id := dir.Table[dir.extendibleHash(util.Key(k))]
 	offset := id * 4096
-	return Page(dir.data[offset : offset + 4096]), id
+	return Page(dir.data[offset : offset+4096]), id
 }
 
 func (dir *Directory) get(k string) string {
 	p, _ := dir.getPage(k)
-	val,_ := p.get(k)
-	return  val
+	val, _ := p.get(k)
+	return val
 }
 
 func (dir *Directory) expand() {
 	dir.Table = append(dir.Table, dir.Table...)
-	dir.Gd ++
+	dir.Gd++
 }
 
 func (dir *Directory) split(page Page) (p1, p2 Page) {
@@ -56,9 +56,9 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 		} else {
 			lookup[k] = true
 		}
-		h := util.Key(k).Hash() & (( 1 << dir.Gd) -1)
+		h := util.Key(k).Hash() & ((1 << dir.Gd) - 1)
 
-		if (h >> uint(page.ld())) & 1 == 1 {
+		if (h>>uint(page.ld()))&1 == 1 {
 			p2.put(k, string(r.Val()))
 		} else {
 			p1.put(k, string(r.Val()))
@@ -68,7 +68,7 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 }
 
 func (dir *Directory) nextPageId() int {
-	dir.LastPageId ++
+	dir.LastPageId++
 	return dir.LastPageId
 }
 
@@ -80,7 +80,7 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 		if obsoletePageId != dir.Table[i] {
 			continue
 		}
-		if (i >> ld) & 1 == 1 {
+		if (i>>ld)&1 == 1 {
 			dir.Table[i] = p2Id
 		} else {
 			dir.Table[i] = p1Id
@@ -89,7 +89,6 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 	return p1Id, p2Id
 
 }
-
 
 func (dir *Directory) put(key, value string) {
 	page, id := dir.getPage(key)
@@ -107,8 +106,8 @@ func (dir *Directory) put(key, value string) {
 			p1.setLd(page.ld() + 1)
 			p2.setLd(page.ld() + 1)
 
-			dir.dataFile.WriteAt(p1, int64(id1 * 4096))
-			dir.dataFile.WriteAt(p2, int64(id2 * 4096))
+			dir.dataFile.WriteAt(p1, int64(id1*4096))
+			dir.dataFile.WriteAt(p2, int64(id2*4096))
 			dir.data.Unmap()
 			dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 			if err != nil {
@@ -128,4 +127,11 @@ func (dir *Directory) serializeMeta() []byte {
 
 	enc.Encode(dir)
 	return meta.Bytes()
+}
+
+func (dir *Directory) String() string {
+	w := new(bytes.Buffer)
+	jsonEnc := json.NewEncoder(w)
+	jsonEnc.Encode(dir)
+	return w.String()
 }
