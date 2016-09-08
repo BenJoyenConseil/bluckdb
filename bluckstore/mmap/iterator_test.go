@@ -1,15 +1,15 @@
 package memap
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"encoding/binary"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestHasNext(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p: Page(make([]byte, 4096)),
+		p:       Page(make([]byte, 4096)),
 		current: 4,
 	}
 	binary.LittleEndian.PutUint16(it.p[4094:], 4)
@@ -24,7 +24,7 @@ func TestHasNext(t *testing.T) {
 func TestHasNext_shouldReturnTrueWhenCurrentIsHigherThan_TOTALHEADERSIZE(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p: Page(make([]byte, 4096)),
+		p:       Page(make([]byte, 4096)),
 		current: 5,
 	}
 	binary.LittleEndian.PutUint16(it.p[4094:], 5)
@@ -39,7 +39,7 @@ func TestHasNext_shouldReturnTrueWhenCurrentIsHigherThan_TOTALHEADERSIZE(t *test
 func TestHasNext_ShouldReturnTrueWhenCurrentIsEqualToPageUse(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p: Page(make([]byte, 4096)),
+		p:       Page(make([]byte, 4096)),
 		current: 5,
 	}
 	binary.LittleEndian.PutUint16(it.p[4094:], 5)
@@ -54,7 +54,7 @@ func TestHasNext_ShouldReturnTrueWhenCurrentIsEqualToPageUse(t *testing.T) {
 func TestNext(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p: Page(make([]byte, 4096)),
+		p:       Page(make([]byte, 4096)),
 		current: 12,
 	}
 	binary.LittleEndian.PutUint16(it.p[4094:], 12)

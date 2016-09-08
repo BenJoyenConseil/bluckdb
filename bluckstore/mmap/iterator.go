@@ -1,7 +1,7 @@
 package memap
 
 type PageIterator struct {
-	p Page
+	p       Page
 	current int
 }
 
@@ -13,8 +13,8 @@ func (it *PageIterator) hasNext() bool {
 	return false
 }
 
-func (it *PageIterator) next() Record {
-	r := ByteRecord(it.p[: it.current])
-	it.current -= int(r.KeyLen() + r.ValLen()) + int(RECORD_TOTAL_HEADER_SIZE)
+func (it *PageIterator) next() ByteRecord {
+	r := ByteRecord(it.p[:it.current])
+	it.current -= int(r.KeyLen()+r.ValLen()) + int(RECORD_TOTAL_HEADER_SIZE)
 	return r
 }
