@@ -1,10 +1,12 @@
 package memap
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
 	"encoding/binary"
 	"errors"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"strconv"
+	"fmt"
 )
 
 func TestRest_DefaultIs4092(t *testing.T) {
@@ -157,8 +159,25 @@ func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testin
 }
 
 func BenchmarkPagePut(b *testing.B) {
+
 	for n := 0; n < b.N; n++ {
 		var p Page = make([]byte, 4096)
-		p.put("key", "mec, elle est où ma caisse ??")
+		for i := 0; i < 100 ; i++ {
+			p.put("key", "mec, elle est où ma caisse ??")
+		}
 	}
+	fmt.Println(b.N)
+}
+
+func BenchmarkPageGet(b *testing.B) {
+	var p Page = make([]byte, 4096)
+	for n := 0; n < 150; n++ {
+		p.put("key" + strconv.Itoa(n), "mec, elle est où ma caisse ??")
+	}
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		p.get("key" + strconv.Itoa(n % 150))
+	}
+	fmt.Println(b.N)
 }

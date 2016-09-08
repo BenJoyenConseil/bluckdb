@@ -1,10 +1,10 @@
 package memap
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"strconv"
-	"bytes"
 )
 
 /*
@@ -12,11 +12,11 @@ import (
 
  from 4092 to 4094, 2 bytes to store local depth (ld)
  from 4094 to 4096, 2 bytes to store the number of bytes used
- */
+*/
 type Page []byte
 
 func (p Page) use() int {
-	return int(binary.LittleEndian.Uint16(p[4094 : 4096]))
+	return int(binary.LittleEndian.Uint16(p[4094:4096]))
 }
 
 func (p Page) rest() int {
@@ -34,12 +34,11 @@ func (p Page) setLd(v int) {
 func (p Page) get(k string) (v string, err error) {
 	it := &PageIterator{
 		current: p.use(),
-		p: p,
+		p:       p,
 	}
 	l := uint16(len(k))
-	var r Record = nil
 	for it.hasNext() {
-		r = it.next()
+		r := it.next()
 
 		if l == r.KeyLen() {
 			if bytes.Compare(r.Key(), []byte(k)) == 0 {
@@ -51,12 +50,12 @@ func (p Page) get(k string) (v string, err error) {
 	return "", errors.New("Key not found")
 }
 
-func (p Page) put(k, v string) error{
+func (p Page) put(k, v string) error {
 	payload := len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE
 	if p.rest() >= payload {
-		r := ByteRecord(p[p.use() : p.use() + payload])
+		r := ByteRecord(p[p.use() : p.use()+payload])
 		r.Write(k, v)
-		binary.LittleEndian.PutUint16(p[4094:],  uint16(p.use() +payload))
+		binary.LittleEndian.PutUint16(p[4094:], uint16(p.use()+payload))
 		return nil
 	} else {
 		return errors.New("The page is full. use = " + strconv.Itoa(p.use()))

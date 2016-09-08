@@ -1,10 +1,9 @@
 package util
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
-
 
 func TestHash(t *testing.T) {
 	// Given
