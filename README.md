@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/BenJoyenConseil/bluckdb.svg?branch=master)](https://travis-ci.org/BenJoyenConseil/bluckdb) [![Stories in Ready](https://badge.waffle.io/BenJoyenConseil/bluckdb.png?label=ready&title=Ready)](https://waffle.io/BenJoyenConseil/bluckdb)
 
-A Key/Value store implementation using the [extendible hashing](https://en.wikipedia.org/wiki/Extendible_hashing) algorithm
+It is a Key/Value store that implements bucketing based on [extendible hashing](https://en.wikipedia.org/wiki/Extendible_hashing)
 
 The ``server.go`` file is a simple http server that answers on the 8080 port.
 
@@ -17,7 +17,7 @@ There are 4 endpoints :
 
 ## the goal
 
-The goal of this project is to explore and reinvent the wheel of well known, state of the art, algorithms and data structures.
+The goal of this project is to explore and to reinvent the wheel of well known, state of the art, algorithms and data structures.
 For experimental and learning purpose only, not production ready.
 
 
