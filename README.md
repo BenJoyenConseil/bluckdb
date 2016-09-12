@@ -2,15 +2,17 @@
 
 [![Build Status](https://travis-ci.org/BenJoyenConseil/bluckdb.svg?branch=master)](https://travis-ci.org/BenJoyenConseil/bluckdb) [![Stories in Ready](https://badge.waffle.io/BenJoyenConseil/bluckdb.png?label=ready&title=Ready)](https://waffle.io/BenJoyenConseil/bluckdb)
 
-A Key/Value store implementation using Golang
+A Key/Value store implementation using the [extendible hashing](https://en.wikipedia.org/wiki/Extendible_hashing) algorithm
 
 The ``server.go`` file is a simple http server that answers on the 8080 port.
 
 
-There are two endpoints :
+There are 4 endpoints :
 
     http://hostname:2233/get?key=<some_key>
     http://hostname:2233/put?key=<some_key>&value=<some_value>
+    http://hostname:2233/meta
+    http://hostname:2233/debug?page_id=<id_of_the_page_to_display>
 
 
 ## the goal
@@ -18,6 +20,29 @@ There are two endpoints :
 The goal of this project is to explore and reinvent the wheel of well known, state of the art, algorithms and data structures.
 For experimental and learning purpose only, not production ready.
 
+
+## design
+
+A Directory is a table of buckets called "Page". 
+
+A Page is a byte array of 4096 bytes length, append only. It stores actual usage of the Page at 4094:4095 bytes (unint16), and local depth at 4092:9093 bytes
+
+A Record is a byte array with a key, a value and the headers :
+ 
+    type Record interface {
+        Key() []byte
+        Val() []byte
+        KeyLen() uint16
+        ValLen() uint16
+    }
+    type ByteRecord []byte
+         
+Actual public methods :
+
+* put : append the record at the offset given by `Page.use()` value
+* get : read in an inverted way, starting from the end and iterating until the key is found, or the beginning
+
+This design allows updating values for a given key without doing lookup before inserting (put is O(1) if the Page is not full). When the Page is full, the `Directory.split()` method skips the old values of the same key and re-insert just the latest
 
 # How to start
 
