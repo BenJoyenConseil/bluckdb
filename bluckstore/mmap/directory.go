@@ -2,7 +2,6 @@ package memap
 
 import (
 	"bytes"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"github.com/BenJoyenConseil/bluckdb/util"
@@ -15,7 +14,6 @@ type Directory struct {
 	data       mmap.MMap
 	Gd         uint `json:"globalDepth"`
 	dataFile   *os.File
-	metaFile   *os.File
 	LastPageId int `json:"LastPageId"`
 }
 
@@ -114,19 +112,10 @@ func (dir *Directory) put(key, value string) {
 				fmt.Println(err)
 			}
 			dir.put(key, value)
-			dir.metaFile.WriteAt(dir.serializeMeta(), 0)
 
 		}
 
 	}
-}
-
-func (dir *Directory) serializeMeta() []byte {
-	var meta bytes.Buffer
-	enc := gob.NewEncoder(&meta)
-
-	enc.Encode(dir)
-	return meta.Bytes()
 }
 
 func (dir *Directory) String() string {

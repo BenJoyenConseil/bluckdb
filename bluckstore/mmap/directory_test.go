@@ -3,12 +3,10 @@ package memap
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/gob"
 	"fmt"
 	"github.com/BenJoyenConseil/bluckdb/util"
 	"github.com/edsrzf/mmap-go"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
@@ -157,26 +155,6 @@ func TestDirectoryReplace(t *testing.T) {
 	assert.Equal(t, 5, r2)
 }
 
-func TestDirectorySerializeMeta(t *testing.T) {
-	// Given
-	dir := &Directory{
-		Table:      []int{0, 1},
-		Gd:         1,
-		LastPageId: 1,
-	}
-
-	// When
-	result := dir.serializeMeta()
-
-	// Then
-	buf := bytes.NewBuffer(result)
-	dec := gob.NewDecoder(buf)
-	resultDir := &Directory{}
-	dec.Decode(resultDir)
-
-	assert.EqualValues(t, dir, resultDir)
-}
-
 func TestDirectory_Put(t *testing.T) {
 	// Given
 	fPath := "/tmp/test.db"
@@ -236,17 +214,13 @@ func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 func TestDirectory_Put_INT(t *testing.T) {
 	// Given
 	fPath := "/tmp/test.db"
-	metaFPath := "/tmp/metaTest.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	metaF, _ := os.OpenFile(metaFPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer f.Close()
-	defer metaF.Close()
 	f.Write(make([]byte, 4096))
 	dir := &Directory{
 		dataFile: f,
 		Gd:       0,
 		Table:    make([]int, 1),
-		metaFile: metaF,
 	}
 	dir.Table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
@@ -261,40 +235,6 @@ func TestDirectory_Put_INT(t *testing.T) {
 	assert.Equal(t, []int{0, 1, 2, 3, 5, 7, 6, 4, 15, 12, 8, 14, 10, 9, 13, 11, 0, 22, 2, 3, 18, 7, 25, 19, 20, 24, 16, 21, 10, 17, 23, 11}, dir.Table)
 
 	os.Remove(fPath)
-	os.Remove(metaFPath)
-}
-
-func TestDirectory_Put_ShouldWriteMetaFileOnDisk_WhenTableIsExpanded(t *testing.T) {
-	// Given
-	fPath := "/tmp/test.db"
-	metaFPath := "/tmp/metaTest.db"
-	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	metaF, _ := os.OpenFile(metaFPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	defer f.Close()
-	defer metaF.Close()
-	f.Write(make([]byte, 4096))
-	dir := &Directory{
-		dataFile: f,
-		Gd:       0,
-		Table:    make([]int, 1),
-		metaFile: metaF,
-	}
-	dir.Table[0] = 0
-	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
-	defer dir.data.Unmap()
-
-	// When
-	for i := 0; i < 1000; i++ {
-
-		dir.put("key"+strconv.Itoa(i), "Yolo !")
-	}
-
-	// Then
-	result, _ := ioutil.ReadFile(metaFPath)
-	assert.NotEmpty(t, result)
-
-	os.Remove(fPath)
-	os.Remove(metaFPath)
 }
 
 func TestDirectory_Put_SameKey(t *testing.T) {
@@ -344,6 +284,10 @@ func TestDirectory_String(t *testing.T) {
 
 	// Then BOUM !!!
 	assert.Equal(t, "{\"table\":[0,1,0,1],\"globalDepth\":1,\"LastPageId\":1}\n", result.String())
+}
+
+func BenchmarkDirectory_Put(b *testing.B) {
+
 }
 
 /*
