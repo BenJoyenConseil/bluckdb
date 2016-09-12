@@ -7,7 +7,7 @@ import (
 
 func TestHash(t *testing.T) {
 	// Given
-	var key Key = "123"
+	var key Key = []byte("123")
 
 	// When
 	result := key.Hash()
