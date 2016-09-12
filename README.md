@@ -56,8 +56,9 @@ This design allows updating values for a given key without doing lookup before i
 * Go will silently exit if a process is already using port 2233
 
 ## Benchmarks
-    BenchmarkMemapPut-4              1000000              1529 ns/op   -> 1,5 µs
-    BenchmarkMemapGet-4              1000000              1874 ns/op   -> 1,9 µs
+    
+    BenchmarkMmapPut                 1000000	          2786 ns/op   -> 2,7 µs
+    BenchmarkMmapGet                 1000000	          1406 ns/op   -> 1,4 µs
     BenchmarkPutDiskKVStore-4         200000              6250 ns/op   -> 6,2 µs
     BenchmarkGetDiskKVStore-4             30          44017416 ns/op   ->  44 ms
     BenchmarkPutMemKVStore-4         1000000              1385 ns/op   -> 1,3 µs
