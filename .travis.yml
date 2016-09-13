@@ -2,10 +2,10 @@ language: go
 go:
   - 1.7
 notificaitons:
+  slack: bda-tribe:6xQ1mkteaYYxHrH9np9FZg1E
   email:
     recipients:
       - bjc@octo.com
-      - mpe@octo.com
     on_success: change
     on_failure: always
 before_script:
