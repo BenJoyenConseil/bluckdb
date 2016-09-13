@@ -34,7 +34,7 @@ func TestDirectory_GetPage(t *testing.T) {
 	d := &Directory{
 		Gd:    4, // means the table size is 2^4 length
 		Table: make([]int, 16),
-		data:  make([]byte, 4096*4),
+		data:  make([]byte, PAGE_SIZE*4),
 	}
 	key := "123" //   1011
 	d.Table[11] = 2
@@ -45,7 +45,7 @@ func TestDirectory_GetPage(t *testing.T) {
 	// Then
 	assert.Equal(t, 2, idPage)
 	assert.Equal(t, 8192, cap(page))
-	assert.Equal(t, 4096, len(page))
+	assert.Equal(t, PAGE_SIZE, len(page))
 }
 
 func TestDirectory_Get(t *testing.T) {
@@ -53,11 +53,11 @@ func TestDirectory_Get(t *testing.T) {
 	d := &Directory{
 		Gd:    4, // means we take 4 significant bytes of the hash result
 		Table: make([]int, 16),
-		data:  make([]byte, 4096*4),
+		data:  make([]byte, PAGE_SIZE*4),
 	}
 	d.Table[11] = 2
-	pageOffset := 2 * 4096
-	binary.LittleEndian.PutUint16(d.data[pageOffset+4094:], 9) // use
+	pageOffset := 2 * PAGE_SIZE
+	binary.LittleEndian.PutUint16(d.data[pageOffset+PAGE_USE_OFFSET:], 9) // use
 
 	binary.LittleEndian.PutUint16(d.data[pageOffset+7:], 3) // keyLen
 	binary.LittleEndian.PutUint16(d.data[pageOffset+5:], 2) // valLen
@@ -92,7 +92,7 @@ func TestDirectory_Split(t *testing.T) {
 	d := &Directory{
 		Gd: 1,
 	}
-	page := Page(make([]byte, 4096))
+	page := Page(make([]byte, PAGE_SIZE))
 	page.setLd(0)
 	fillPage(page, 2)
 
@@ -111,7 +111,7 @@ func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
 	d := &Directory{
 		Gd: 1,
 	}
-	page := Page(make([]byte, 4096))
+	page := Page(make([]byte, PAGE_SIZE))
 	page.setLd(0)
 	fillPage(page, 2)
 	page.put("key0", "value updated")
@@ -160,7 +160,7 @@ func TestDirectory_Put(t *testing.T) {
 	fPath := "/tmp/test.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer f.Close()
-	f.Write(make([]byte, 4096))
+	f.Write(make([]byte, PAGE_SIZE))
 	dir := &Directory{
 		dataFile: f,
 		Gd:       0,
@@ -169,7 +169,7 @@ func TestDirectory_Put(t *testing.T) {
 	dir.Table[0] = 0
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
-	var page Page = Page(dir.data[0:4096])
+	var page Page = Page(dir.data[0:PAGE_SIZE])
 	fillPage(page, 5)
 
 	// When
@@ -187,7 +187,7 @@ func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 	fPath := "/tmp/test.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer f.Close()
-	f.Write(make([]byte, 4096))
+	f.Write(make([]byte, PAGE_SIZE))
 	dir := &Directory{
 		dataFile: f,
 		Gd:       0,
@@ -197,7 +197,7 @@ func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 	defer dir.data.Unmap()
 
-	var page Page = Page(dir.data[0:4096])
+	var page Page = Page(dir.data[0:PAGE_SIZE])
 	fillPage(page, 182) // set Page to 4076
 
 	// When
@@ -206,8 +206,8 @@ func TestDirectory_PutShouldIncrementLD_WhenPageIsFull(t *testing.T) {
 	// Then
 	assert.Equal(t, 8192, len(dir.data))
 	assert.Equal(t, 1, int(dir.Gd))
-	assert.Equal(t, 1, Page(dir.data[:4096]).ld())
-	assert.Equal(t, 1, Page(dir.data[4096:8192]).ld())
+	assert.Equal(t, 1, Page(dir.data[:PAGE_SIZE]).ld())
+	assert.Equal(t, 1, Page(dir.data[PAGE_SIZE:PAGE_SIZE*2]).ld())
 	os.Remove(fPath)
 }
 
@@ -216,7 +216,7 @@ func TestDirectory_Put_INT(t *testing.T) {
 	fPath := "/tmp/test.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer f.Close()
-	f.Write(make([]byte, 4096))
+	f.Write(make([]byte, PAGE_SIZE))
 	dir := &Directory{
 		dataFile: f,
 		Gd:       0,
@@ -242,7 +242,7 @@ func TestDirectory_Put_SameKey(t *testing.T) {
 	fPath := "/tmp/test.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer f.Close()
-	f.Write(make([]byte, 4096))
+	f.Write(make([]byte, PAGE_SIZE))
 	dir := &Directory{
 		dataFile: f,
 		Gd:       0,
@@ -301,7 +301,7 @@ func TestDirectory_Gc(t *testing.T) {
 	metaF, _ := os.OpenFile(metaFPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
 	defer f.Close()
 	defer metaF.Close()
-	f.Write(make([]byte, 4096))
+	f.Write(make([]byte, PAGE_SIZE))
 	dir := &Directory{
 		dataFile: f,
 		Gd: 0,
@@ -321,5 +321,5 @@ func TestDirectory_Gc(t *testing.T) {
 	// Then BOUM !!!
 	assert.Equal(t, 1, len(dir.Table))
 	assert.Equal(t, 0, dir.Gd)
-	assert.Equal(t, 4096, len(dir.data))
+	assert.Equal(t, PAGE_SIZE, len(dir.data))
 }*/

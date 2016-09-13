@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"strconv"
 )
 
 /*
@@ -15,20 +14,24 @@ import (
 */
 type Page []byte
 
+const PAGE_SIZE = 4096
+const PAGE_USE_OFFSET = 4094
+const PAGE_LOCAL_DEPTH_OFFSET = 4092
+
 func (p Page) use() int {
-	return int(binary.LittleEndian.Uint16(p[4094:4096]))
+	return int(binary.LittleEndian.Uint16(p[PAGE_USE_OFFSET:]))
 }
 
 func (p Page) rest() int {
-	return 4092 - p.use()
+	return PAGE_LOCAL_DEPTH_OFFSET - p.use()
 }
 
 func (p Page) ld() int {
-	return int(binary.LittleEndian.Uint16(p[4092:]))
+	return int(binary.LittleEndian.Uint16(p[PAGE_LOCAL_DEPTH_OFFSET:]))
 }
 
 func (p Page) setLd(v int) {
-	binary.LittleEndian.PutUint16(p[4092:], uint16(v))
+	binary.LittleEndian.PutUint16(p[PAGE_LOCAL_DEPTH_OFFSET:], uint16(v))
 }
 
 func (p Page) get(k string) (v string, err error) {
@@ -53,11 +56,14 @@ func (p Page) get(k string) (v string, err error) {
 func (p Page) put(k, v string) error {
 	payload := len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE
 	if p.rest() >= payload {
-		r := ByteRecord(p[p.use() : p.use()+payload])
+
+		use := p.use()
+		r := ByteRecord(p[use : use + payload])
 		r.Write(k, v)
-		binary.LittleEndian.PutUint16(p[4094:], uint16(p.use()+payload))
+		binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], uint16(use + payload))
+
 		return nil
 	} else {
-		return errors.New("The page is full. use = " + strconv.Itoa(p.use()))
+		return errors.New("The page is full.")
 	}
 }

@@ -9,10 +9,10 @@ import (
 func TestHasNext(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p:       Page(make([]byte, 4096)),
+		p:       Page(make([]byte, PAGE_SIZE)),
 		current: 4,
 	}
-	binary.LittleEndian.PutUint16(it.p[4094:], 4)
+	binary.LittleEndian.PutUint16(it.p[PAGE_USE_OFFSET:], 4)
 
 	// When
 	result := it.hasNext()
@@ -24,10 +24,10 @@ func TestHasNext(t *testing.T) {
 func TestHasNext_shouldReturnTrueWhenCurrentIsHigherThan_TOTALHEADERSIZE(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p:       Page(make([]byte, 4096)),
+		p:       Page(make([]byte, PAGE_SIZE)),
 		current: 5,
 	}
-	binary.LittleEndian.PutUint16(it.p[4094:], 5)
+	binary.LittleEndian.PutUint16(it.p[PAGE_USE_OFFSET:], 5)
 
 	// When
 	result := it.hasNext()
@@ -39,10 +39,10 @@ func TestHasNext_shouldReturnTrueWhenCurrentIsHigherThan_TOTALHEADERSIZE(t *test
 func TestHasNext_ShouldReturnTrueWhenCurrentIsEqualToPageUse(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p:       Page(make([]byte, 4096)),
+		p:       Page(make([]byte, PAGE_SIZE)),
 		current: 5,
 	}
-	binary.LittleEndian.PutUint16(it.p[4094:], 5)
+	binary.LittleEndian.PutUint16(it.p[PAGE_USE_OFFSET:], 5)
 
 	// When
 	result := it.hasNext()
@@ -54,10 +54,10 @@ func TestHasNext_ShouldReturnTrueWhenCurrentIsEqualToPageUse(t *testing.T) {
 func TestNext(t *testing.T) {
 	// Given
 	it := &PageIterator{
-		p:       Page(make([]byte, 4096)),
+		p:       Page(make([]byte, PAGE_SIZE)),
 		current: 12,
 	}
-	binary.LittleEndian.PutUint16(it.p[4094:], 12)
+	binary.LittleEndian.PutUint16(it.p[PAGE_USE_OFFSET:], 12)
 	it.p[0] = 'H'
 	it.p[1] = 'i'
 	binary.LittleEndian.PutUint16(it.p[2:], 1)

@@ -23,8 +23,8 @@ func (dir *Directory) extendibleHash(k util.Hashable) int {
 
 func (dir *Directory) getPage(k string) (Page, int) {
 	id := dir.Table[dir.extendibleHash(util.Key(k))]
-	offset := id * 4096
-	return Page(dir.data[offset : offset+4096]), id
+	offset := id * PAGE_SIZE
+	return Page(dir.data[offset : offset+PAGE_SIZE]), id
 }
 
 func (dir *Directory) get(k string) string {
@@ -40,8 +40,8 @@ func (dir *Directory) expand() {
 
 func (dir *Directory) split(page Page) (p1, p2 Page) {
 	lookup := make(map[string]bool)
-	p1 = make([]byte, 4096)
-	p2 = make([]byte, 4096)
+	p1 = make([]byte, PAGE_SIZE)
+	p2 = make([]byte, PAGE_SIZE)
 
 	it := &PageIterator{p: page, current: page.use()}
 
@@ -104,8 +104,8 @@ func (dir *Directory) put(key, value string) {
 			p1.setLd(page.ld() + 1)
 			p2.setLd(page.ld() + 1)
 
-			dir.dataFile.WriteAt(p1, int64(id1*4096))
-			dir.dataFile.WriteAt(p2, int64(id2*4096))
+			dir.dataFile.WriteAt(p1, int64(id1*PAGE_SIZE))
+			dir.dataFile.WriteAt(p2, int64(id2*PAGE_SIZE))
 			dir.data.Unmap()
 			dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR, 0)
 			if err != nil {

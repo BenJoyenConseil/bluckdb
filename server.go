@@ -49,8 +49,8 @@ func main() {
 			fmt.Fprint(w, "ReadFile DATA FILE error : "+err.Error())
 			return
 		}
-		buff := make([]byte, 4096)
-		f.ReadAt(buff, int64(pageId*4096))
+		buff := make([]byte, mmap.PAGE_SIZE)
+		f.ReadAt(buff, int64(pageId * mmap.PAGE_SIZE))
 		fmt.Fprint(w, string(buff))
 	})
 

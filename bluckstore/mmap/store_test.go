@@ -23,7 +23,7 @@ func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
 	store.Open()
 
 	// Then
-	assert.Equal(t, 4096, len(store.Dir.data))
+	assert.Equal(t, PAGE_SIZE, len(store.Dir.data))
 	assert.Equal(t, DB_DIRECTORY + FILE_NAME, store.Dir.dataFile.Name())
 	assert.Equal(t, []int{0}, store.Dir.Table)
 	assert.Equal(t, 0, int(store.Dir.Gd))
@@ -117,7 +117,7 @@ func TestMmapKVStore_Open_shouldCreateNewFileWhenNotExisting(t *testing.T) {
 	store.Open()
 
 	// Then
-	assert.Equal(t, 4096, len(store.Dir.data))
+	assert.Equal(t, PAGE_SIZE, len(store.Dir.data))
 	assert.Equal(t, []int{0}, store.Dir.Table)
 	assert.Equal(t, 0, int(store.Dir.Gd))
 	assert.Equal(t, 0, store.Dir.LastPageId)

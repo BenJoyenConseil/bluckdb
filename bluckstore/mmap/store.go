@@ -29,7 +29,7 @@ func (store *MmapKVStore) Open() {
 			Gd:    0,
 			Table: make([]int, 1),
 		}
-		f.Write(make([]byte, 4096))
+		f.Write(make([]byte, PAGE_SIZE))
 	} else {
 		meta, err := ioutil.ReadFile(DB_DIRECTORY + META_FILE_NAME)
 
@@ -94,7 +94,7 @@ func (s *MmapKVStore) RestoreMETA() {
 }
 
 func FindBucketNumber(fileSize int64) int64 {
-	return fileSize / int64(4096)
+	return fileSize / int64(PAGE_SIZE)
 }
 
 func FindTwoToPowerOfN(v uint) uint {

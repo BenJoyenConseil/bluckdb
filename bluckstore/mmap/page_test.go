@@ -9,22 +9,22 @@ import (
 	"fmt"
 )
 
-func TestRest_DefaultIs4092(t *testing.T) {
+func TestRest_DefaultIsPAGE_LOCAL_DEPTH_OFFSET(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
+	var p Page = make([]byte, PAGE_SIZE)
 
 	// When
 	result := p.rest()
 
 	// Then
-	assert.Equal(t, 4092, result)
+	assert.Equal(t, PAGE_LOCAL_DEPTH_OFFSET, result)
 }
 
 func TestRest(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
+	var p Page = make([]byte, PAGE_SIZE)
 	// use = 4000
-	binary.LittleEndian.PutUint16(p[4094:], uint16(4000))
+	binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], uint16(4000))
 
 	// When
 	result := p.rest()
@@ -35,8 +35,8 @@ func TestRest(t *testing.T) {
 
 func TestLd(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4092:], uint16(16))
+	var p Page = make([]byte, PAGE_SIZE)
+	binary.LittleEndian.PutUint16(p[PAGE_LOCAL_DEPTH_OFFSET:], uint16(16))
 
 	// When
 	result := p.ld()
@@ -47,12 +47,12 @@ func TestLd(t *testing.T) {
 
 func TestSetLd(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
+	var p Page = make([]byte, PAGE_SIZE)
 	ld := 30
 
 	// When
 	p.setLd(ld)
-	result := binary.LittleEndian.Uint16(p[4092:])
+	result := binary.LittleEndian.Uint16(p[PAGE_LOCAL_DEPTH_OFFSET:])
 
 	// Then
 	assert.Equal(t, 30, int(result))
@@ -60,8 +60,8 @@ func TestSetLd(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 14) // use
+	var p Page = make([]byte, PAGE_SIZE)
+	binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], 14) // use
 
 	// insert a record
 	k := "key1"
@@ -82,8 +82,8 @@ func TestGet(t *testing.T) {
 
 func TestGet_ShouldReturnEmptyStringWhenKeyDoesntExist(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 14) // use
+	var p Page = make([]byte, PAGE_SIZE)
+	binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], 14) // use
 
 	// insert a record
 	k := "key1"
@@ -104,7 +104,7 @@ func TestGet_ShouldReturnEmptyStringWhenKeyDoesntExist(t *testing.T) {
 
 func TestPut_UseShouldBeIncrementedWithThePayloadOfTheNewRecord(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
+	var p Page = make([]byte, PAGE_SIZE)
 	k := "key1"   // len (=2) + key (=4)   = 6 bytes
 	v := "Yolo !" // len (=2) + value (=6) = 8 bytes
 
@@ -117,7 +117,7 @@ func TestPut_UseShouldBeIncrementedWithThePayloadOfTheNewRecord(t *testing.T) {
 
 func TestPut_(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
+	var p Page = make([]byte, PAGE_SIZE)
 	k := "key1"
 	v := "Yolo !"
 
@@ -146,8 +146,8 @@ func TestPut_(t *testing.T) {
 
 func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testing.T) {
 	// Given
-	var p Page = make([]byte, 4096)
-	binary.LittleEndian.PutUint16(p[4094:], 4080)
+	var p Page = make([]byte, PAGE_SIZE)
+	binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], 4080)
 	k := "key1"
 	v := "Yolo !"
 
@@ -155,13 +155,13 @@ func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testin
 	result := p.put(k, v)
 
 	// Then
-	assert.Equal(t, errors.New("The page is full. use = 4080"), result)
+	assert.Equal(t, errors.New("The page is full."), result)
 }
 
 func BenchmarkPagePut(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
-		var p Page = make([]byte, 4096)
+		var p Page = make([]byte, PAGE_SIZE)
 		for i := 0; i < 100 ; i++ {
 			p.put("key", "mec, elle est où ma caisse ??")
 		}
@@ -170,7 +170,7 @@ func BenchmarkPagePut(b *testing.B) {
 }
 
 func BenchmarkPageGet(b *testing.B) {
-	var p Page = make([]byte, 4096)
+	var p Page = make([]byte, PAGE_SIZE)
 	for n := 0; n < 150; n++ {
 		p.put("key" + strconv.Itoa(n), "mec, elle est où ma caisse ??")
 	}
