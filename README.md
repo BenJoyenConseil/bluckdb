@@ -25,7 +25,7 @@ For experimental and learning purpose only, not production ready.
 
 A Directory is a table of buckets called "Page". 
 
-A Page is a byte array of PAGE_SIZE bytes length, append only. It stores actual usage of the Page at PAGE_USE_OFFSET:4095 bytes (unint16), and local depth at PAGE_LOCAL_DEPTH_OFFSET:9093 bytes
+A Page is a byte array of 4096 bytes length, append only. It stores actual usage of the Page at PAGE_USE_OFFSET:4095 bytes (unint16), and local depth at PAGE_LOCAL_DEPTH_OFFSET:9093 bytes
 
 A Record is a byte array with a key, a value and the headers :
  
