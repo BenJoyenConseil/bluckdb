@@ -18,6 +18,10 @@ const PAGE_SIZE = 4096
 const PAGE_USE_OFFSET = 4094
 const PAGE_LOCAL_DEPTH_OFFSET = 4092
 
+//
+// Read the Trailer of the Page where Use is stored (4094).
+// Do LittleEndian unserialization on a 2 bytes slice
+//
 func (p Page) use() int {
 	return int(binary.LittleEndian.Uint16(p[PAGE_USE_OFFSET:]))
 }
@@ -53,8 +57,16 @@ func (p Page) get(k string) (v string, err error) {
 	return "", errors.New("Key not found")
 }
 
+//
+// Put writes key and value on disk, within the Page boundaries.
+// It checks if the page's available space is more than the record size.
+// If so, it writes record after the last offset given by page.use()
+// If not, it returns an error.
+//
 func (p Page) put(k, v string) error {
 	payload := len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE
+
+	// TODO : should p.rest() be keeped in memory to skip the task of unserialization ?
 	if p.rest() >= payload {
 
 		use := p.use()
@@ -63,7 +75,7 @@ func (p Page) put(k, v string) error {
 		binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], uint16(use + payload))
 
 		return nil
-	} else {
-		return errors.New("The page is full.")
 	}
+
+	return errors.New("The page is full.")
 }

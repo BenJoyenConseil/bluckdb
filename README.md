@@ -1,6 +1,6 @@
 # Bluckdb
 
-[![Build Status](https://travis-ci.org/BenJoyenConseil/bluckdb.svg?branch=master)](https://travis-ci.org/BenJoyenConseil/bluckdb) [![Stories in Ready](https://badge.waffle.io/BenJoyenConseil/bluckdb.png?label=ready&title=Ready)](https://waffle.io/BenJoyenConseil/bluckdb)
+[![Build Status](https://travis-ci.org/BenJoyenConseil/bluckdb.svg?branch=master)](https://travis-ci.org/BenJoyenConseil/bluckdb) [![Stories in Ready](https://badge.waffle.io/BenJoyenConseil/bluckdb.png?label=ready&title=Ready)](https://waffle.io/BenJoyenConseil/bluckdb) [![Go Report Card](https://goreportcard.com/badge/github.com/BenJoyenConseil/bluckdb)](https://goreportcard.com/report/github.com/BenJoyenConseil/bluckdb) [![GoDoc](https://godoc.org/github.com/BenJoyenConseil/bluckdb?status.svg)](https://godoc.org/github.com/BenJoyenConseil/bluckdb)
 
 It is a Key/Value store that implements bucketing based on [extendible hashing](https://en.wikipedia.org/wiki/Extendible_hashing)
 
@@ -41,7 +41,7 @@ A Record is a byte array with a key, a value and the headers :
 Actual public methods :
 
 * put : append the record at the offset given by `Page.use()` value
-* get : read in an inverted way, starting from the end and iterating until the key is found, or the beginning
+* get : read in reverse way, starting from the end and iterating until the key is found, or the beginning
 
 This design allows updating values for a given key without doing lookup before inserting (put is O(1) if the Page is not full). When the Page is full, the `Directory.split()` method skips the old values of the same key and re-insert just the latest
 
