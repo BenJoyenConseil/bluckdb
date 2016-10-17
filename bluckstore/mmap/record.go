@@ -42,11 +42,9 @@ func (r ByteRecord) ValLen() uint16 {
 	return binary.LittleEndian.Uint16(r[l-RECORD_TOTAL_HEADER_SIZE:])
 }
 
-/*
-
- Record order = [key, value, lenVal, lenKey]
-
-*/
+//
+// Record order = [key, value, lenVal, lenKey]
+//
 func (r ByteRecord) Write(key, val string) {
 	lenKey := uint16(len(key))
 	lenVal := uint16(len(val))

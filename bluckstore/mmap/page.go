@@ -6,12 +6,12 @@ import (
 	"errors"
 )
 
-/*
- A page is an array of 4096 bytes (the same size as the SSD Hard Drive default configuration on Linux)
-
- from 4092 to 4094, 2 bytes to store local depth (ld)
- from 4094 to 4096, 2 bytes to store the number of bytes used
-*/
+//
+// A page is an array of 4096 bytes (the same size as the SSD Hard Drive default configuration on Linux)
+//
+// from 4092 to 4094, 2 bytes to store local depth (ld)
+// from 4094 to 4096, 2 bytes to store the number of bytes used
+//
 type Page []byte
 
 const PAGE_SIZE = 4096

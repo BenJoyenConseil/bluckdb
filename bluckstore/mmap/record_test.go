@@ -99,3 +99,37 @@ func TestByteRecord_Write(t *testing.T) {
 	assert.Equal(t, uint16(4), binary.LittleEndian.Uint16(r[10:]))
 	assert.Equal(t, uint16(6), binary.LittleEndian.Uint16(r[12:]))
 }
+
+func BenchmarkByteRecord_Write(b *testing.B) {
+
+	k := "key123123123"
+	v := "yolo i am the value of the key 123123123 !! yolo !"
+	r := ByteRecord(make([]byte, len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE))
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		r.Write(k, v)
+	}
+}
+
+type AppendRecord []byte
+
+func (r AppendRecord) Write(key, val string) {
+	lenKey := uint16(len(key))
+	lenVal := uint16(len(val))
+	total := lenKey + lenVal
+	binary.LittleEndian.PutUint16(r[total:], lenVal)
+	binary.LittleEndian.PutUint16(r[total + RECORD_HEADER_SIZE:], lenKey)
+	r = append(r[0:0], (key + val)...)
+}
+
+func BenchmarkByteRecord_Write_WitheAppend(b *testing.B) {
+	k := "key123123123"
+	v := "yolo i am the value of the key 123123123 !! yolo !"
+	r := AppendRecord(make([]byte, (len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE)))
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		r.Write(k, v)
+	}
+}

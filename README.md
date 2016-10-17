@@ -25,7 +25,8 @@ For experimental and learning purpose only, not production ready.
 
 A Directory is a table of buckets called "Page". 
 
-A Page is a byte array of 4096 bytes length, append only. It stores actual usage of the Page at PAGE_USE_OFFSET:4095 bytes (unint16), and local depth at PAGE_LOCAL_DEPTH_OFFSET:9093 bytes
+A Page is a byte array of 4096 bytes length, append only. 
+Trailer : It stores actual usage of the Page at 4094 bytes (unint16), and local depth at 9092 bytes (unint16)
 
 A Record is a byte array with a key, a value and the headers :
  
@@ -47,19 +48,23 @@ This design allows updating values for a given key without doing lookup before i
 # How to start
 
 ## Get the package
-* go get github.com/BenJoyenConseil/bluckdb
-* If you run a go program for the first time, do not forget to setup your GOPATH : export GOPATH=$HOME/Dev/go
+
+    go get github.com/BenJoyenConseil/bluckdb
+
+If you run a go program for the first time, do not forget to setup your GOPATH : export GOPATH=$HOME/Dev/go
 
 ## Run the server
 
-* go run server.go
-* Go will silently exit if a process is already using port 2233
+    go run server.go
+
+
+Note : Go will silently exit if a process is already using **port 2233**
 
 ## Benchmarks
     
-    BenchmarkMmapPut                 1000000	          2786 ns/op   -> 2,7 µs
-    BenchmarkMmapGet                 1000000	          1406 ns/op   -> 1,4 µs
-    BenchmarkPutDiskKVStore-4         200000              6250 ns/op   -> 6,2 µs
-    BenchmarkGetDiskKVStore-4             30          44017416 ns/op   ->  44 ms
-    BenchmarkPutMemKVStore-4         1000000              1385 ns/op   -> 1,3 µs
-    BenchmarkGetMemKVStore-4         2000000               711 ns/op   -> 0,7 µs
+    BenchmarkBluckDBPut                    1000000	            2786 ns/op   -> 2,7 µs
+    BenchmarkBluckDBGet                    1000000	            1406 ns/op   -> 1,4 µs
+    BenchmarkPutNaiveDiskKVStore-4          200000              6250 ns/op   -> 6,2 µs
+    BenchmarkGetNaiveDiskKVStore-4              30          44017416 ns/op   ->  44 ms
+    BenchmarkPutHashMap-4                  1000000              1385 ns/op   -> 1,3 µs
+    BenchmarkGetHashMap-4                  2000000               711 ns/op   -> 0,7 µs

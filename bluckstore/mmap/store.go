@@ -55,13 +55,13 @@ func (s *MmapKVStore) Put(k, v string) {
 func (s *MmapKVStore) Close() {
 	s.Dir.data.Unmap()
 	s.Dir.dataFile.Close()
-	mFile, err := os.OpenFile(DB_DIRECTORY + META_FILE_NAME, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
-	defer mFile.Close()
+	metaFile, err := os.OpenFile(DB_DIRECTORY + META_FILE_NAME, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	defer metaFile.Close()
 
 	if err != nil {
 		fmt.Println(err)
 	}
-	mFile.WriteAt(EncodeMeta(s.Dir).Bytes(), 0)
+	metaFile.WriteAt(EncodeMeta(s.Dir).Bytes(), 0)
 
 }
 

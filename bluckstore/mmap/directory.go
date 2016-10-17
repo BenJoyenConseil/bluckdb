@@ -49,7 +49,7 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 		r := it.next()
 		k := string(r.Key())
 		if _, ok := lookup[k]; ok {
-			// this record is skipped because a younger version exists
+			// this record is skipped because a younger version exists, garbage collection of older version
 			continue
 		} else {
 			lookup[k] = true
