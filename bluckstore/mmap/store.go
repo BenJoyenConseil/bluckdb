@@ -1,7 +1,6 @@
 package mmap
 
 import (
-	"github.com/edsrzf/mmap-go"
 	"os"
 	"fmt"
 	"bytes"
@@ -41,7 +40,7 @@ func (store *MmapKVStore) Open() {
 	}
 
 	store.Dir.dataFile = f
-	store.Dir.data, _ = mmap.Map(store.Dir.dataFile, mmap.RDWR, 0644)
+	store.Dir.mmapDataFile()
 }
 
 func (s *MmapKVStore) Get(k string) string {

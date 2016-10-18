@@ -7,6 +7,7 @@ import (
 	"github.com/BenJoyenConseil/bluckdb/util"
 	"github.com/edsrzf/mmap-go"
 	"os"
+	"syscall"
 )
 
 type Directory struct {
@@ -36,6 +37,13 @@ func (dir *Directory) get(k string) string {
 func (dir *Directory) expand() {
 	dir.Table = append(dir.Table, dir.Table...)
 	dir.Gd++
+}
+
+func (dir *Directory) increaseSize() {
+	stats,_ := dir.dataFile.Stat()
+	size := stats.Size()
+	dir.dataFile.WriteAt(make([]byte, size), int64(size))
+	dir.mmapDataFile()
 }
 
 func (dir *Directory) split(page Page) (p1, p2 Page) {
@@ -104,17 +112,23 @@ func (dir *Directory) put(key, value string) {
 			p1.setLd(page.ld() + 1)
 			p2.setLd(page.ld() + 1)
 
-			dir.dataFile.WriteAt(p1, int64(id1*PAGE_SIZE))
-			dir.dataFile.WriteAt(p2, int64(id2*PAGE_SIZE))
-			dir.data.Unmap()
-			dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR, 0)
-			if err != nil {
-				fmt.Println(err)
+			if(id2 * PAGE_SIZE >= len(dir.data)) {
+				dir.increaseSize()
 			}
-			dir.put(key, value)
+			copy(dir.data[id1 * PAGE_SIZE : id1 * PAGE_SIZE + PAGE_SIZE], p1)
+			copy(dir.data[id2 * PAGE_SIZE : id2 * PAGE_SIZE + PAGE_SIZE], p2)
 
+			dir.put(key, value)
 		}
 
+	}
+}
+
+func (dir *Directory) mmapDataFile() {
+	var err error
+	dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR | syscall.MAP_POPULATE, 0644)
+	if err != nil {
+		fmt.Println(err)
 	}
 }
 

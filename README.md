@@ -62,7 +62,7 @@ Note : Go will silently exit if a process is already using **port 2233**
 
 ## Benchmarks
     
-    BenchmarkBluckDBPut                    1000000	            2786 ns/op   -> 2,7 µs
+    BenchmarkBluckDBPut                    1000000	            1359 ns/op   -> 1,3 µs
     BenchmarkBluckDBGet                    1000000	            1406 ns/op   -> 1,4 µs
     BenchmarkPutNaiveDiskKVStore-4          200000              6250 ns/op   -> 6,2 µs
     BenchmarkGetNaiveDiskKVStore-4              30          44017416 ns/op   ->  44 ms

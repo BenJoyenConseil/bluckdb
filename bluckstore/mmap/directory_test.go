@@ -87,6 +87,25 @@ func TestDirectory_Expand(t *testing.T) {
 	assert.Equal(t, 4, int(d.Gd))
 }
 
+func TestDirectory_IncreaseSize(t *testing.T) {
+	// Given
+	filePath := "/tmp/test.t"
+	os.Remove(filePath)
+	f, _ := os.Create(filePath)
+	d := &Directory{
+		dataFile: f,
+	}
+	f.Write(make([]byte, 8192))
+
+	// When
+	d.increaseSize()
+
+	// Then
+	fstats, _ := f.Stat()
+	assert.Equal(t, int64(16384), fstats.Size())
+	assert.Equal(t, make([]byte, 8192), []byte(d.data[8192:]))
+}
+
 func TestDirectory_Split(t *testing.T) {
 	// Given
 	d := &Directory{
@@ -179,6 +198,33 @@ func TestDirectory_Put(t *testing.T) {
 	result := make([]byte, 9)
 	dir.dataFile.ReadAt(result, 105)
 	assert.Equal(t, "123Yolo !", string(result))
+	os.Remove(fPath)
+}
+
+func TestDirectory_Put_ShouldIncreaseSize_WhenFileIsFull(t *testing.T) {
+	// Given
+	fPath := "/tmp/test.t"
+	os.Remove(fPath)
+	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	defer f.Close()
+	f.Write(make([]byte, PAGE_SIZE * 4))
+	dir := &Directory{
+		dataFile: f,
+		data: mmap.MMap(make([]byte, PAGE_SIZE * 4)),
+		LastPageId: 3,
+		Table: []int{0, 2, 1, 3},
+	}
+
+	var page Page = Page(dir.data[0:PAGE_SIZE])
+	binary.LittleEndian.PutUint16(page[PAGE_USE_OFFSET:], uint16(PAGE_USE_OFFSET))
+
+	// When
+	dir.put("123", "Yolo !")
+
+	// Then
+	stats, _ := dir.dataFile.Stat()
+	assert.Equal(t, int64(PAGE_SIZE * 8), stats.Size())
+	assert.Equal(t, PAGE_SIZE * 8, len(dir.data))
 	os.Remove(fPath)
 }
 
