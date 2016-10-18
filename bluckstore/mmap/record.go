@@ -1,4 +1,4 @@
-package memap
+package mmap
 
 import (
 	"encoding/binary"
@@ -44,6 +44,8 @@ func (r ByteRecord) ValLen() uint16 {
 
 //
 // Record order = [key, value, lenVal, lenKey]
+// Write does it fast because it skips "String to Byte Slice conversion",
+// using copy(dst, src[]) special case with string
 //
 func (r ByteRecord) Write(key, val string) {
 	lenKey := uint16(len(key))

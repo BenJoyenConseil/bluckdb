@@ -1,4 +1,4 @@
-package memap
+package mmap
 
 import (
 	"github.com/edsrzf/mmap-go"

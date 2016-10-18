@@ -1,4 +1,4 @@
-package memap
+package mmap
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -193,3 +193,4 @@ func BenchmarkMmapGet(b *testing.B) {
 		store.Get(strconv.Itoa(rand.Intn(1000000 - 1)))
 	}
 }
+

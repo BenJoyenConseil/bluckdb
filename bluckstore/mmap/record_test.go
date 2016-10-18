@@ -1,4 +1,4 @@
-package memap
+package mmap
 
 import (
 	"encoding/binary"
