@@ -20,7 +20,7 @@ const (
 
 //
 // Open create the datafile and the metadata file if they do not exist.
-// Else if they exist, it loads from the disk and mmap Data.
+// Else if they exist, it loads from the disk and mmap the datafile.
 //
 func (store *MmapKVStore) Open() {
 
@@ -54,7 +54,7 @@ func (s *MmapKVStore) Get(k string) string {
 }
 
 //
-// Put insert data into the memory which is mapped on disk, but does not persit the metadata
+// Put inserts data into the memory which is mapped on disk, but does not persit the metadata
 // If the store crashes in an inconsistent way (metadata != data), you need to use the recovery tool (RestoreMETA func)
 //
 func (s *MmapKVStore) Put(k, v string) {
