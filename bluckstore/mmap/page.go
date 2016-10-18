@@ -14,9 +14,11 @@ import (
 //
 type Page []byte
 
-const PAGE_SIZE = 4096
-const PAGE_USE_OFFSET = 4094
-const PAGE_LOCAL_DEPTH_OFFSET = 4092
+const (
+	PAGE_SIZE = 4096
+	PAGE_USE_OFFSET = 4094
+	PAGE_LOCAL_DEPTH_OFFSET = 4092
+)
 
 //
 // Read the Trailer of the Page where Use is stored (4094).

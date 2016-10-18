@@ -20,7 +20,7 @@ const (
 
 //
 // Open create the datafile and the metadata file if they do not exist.
-// Else if they exist, it load from the disk and mmap Data.
+// Else if they exist, it loads from the disk and mmap Data.
 //
 func (store *MmapKVStore) Open() {
 
