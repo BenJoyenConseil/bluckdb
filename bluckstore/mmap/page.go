@@ -22,12 +22,12 @@ const PAGE_LOCAL_DEPTH_OFFSET = 4092
 // Read the Trailer of the Page where Use is stored (4094).
 // Do LittleEndian deserialization on a 2 bytes slice
 //
-func (p Page) use() int {
+func (p Page) Use() int {
 	return int(binary.LittleEndian.Uint16(p[PAGE_USE_OFFSET:]))
 }
 
 func (p Page) rest() int {
-	return PAGE_LOCAL_DEPTH_OFFSET - p.use()
+	return PAGE_LOCAL_DEPTH_OFFSET - p.Use()
 }
 
 func (p Page) ld() int {
@@ -38,18 +38,23 @@ func (p Page) setLd(v int) {
 	binary.LittleEndian.PutUint16(p[PAGE_LOCAL_DEPTH_OFFSET:], uint16(v))
 }
 
-func (p Page) get(k string) (v string, err error) {
+//
+// Get iterates through the page using PageIterator with cursor setted to p.Use().
+// It compares the key length first, if it matches it compares all bytes and then returns the value.
+// It begins to watch the last record because the page is append only, so the last version of the value for a key is more likely to be near the end
+//
+func (p Page) Get(k string) (v string, err error) {
 	it := &PageIterator{
-		current: p.use(),
+		current: p.Use(),
 		p:       p,
 	}
 	l := uint16(len(k))
-	for it.hasNext() {
-		r := it.next()
+	for it.HasNext() {
+		r := it.Next()
 
-		if l == r.KeyLen() {
-			if bytes.Compare(r.Key(), []byte(k)) == 0 {
-				return string(r.Val()), nil
+		if l == r.keyLen() {
+			if bytes.Compare(r.key(), []byte(k)) == 0 {
+				return string(r.val()), nil
 			}
 		}
 	}
@@ -63,13 +68,13 @@ func (p Page) get(k string) (v string, err error) {
 // If so, it writes record after the last offset given by page.use()
 // If not, it returns an error.
 //
-func (p Page) put(k, v string) error {
+func (p Page) Put(k, v string) error {
 	payload := len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE
 
 	// TODO : should p.rest() be keeped in memory to skip the task of deserialization ?
 	if p.rest() >= payload {
 
-		use := p.use()
+		use := p.Use()
 		r := ByteRecord(p[use : use + payload])
 		r.Write(k, v)
 		binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], uint16(use + payload))

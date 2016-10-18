@@ -12,10 +12,16 @@ type MmapKVStore struct {
 	Dir *Directory
 }
 
-const FILE_NAME = "bluck.data"
-const META_FILE_NAME = "bluck.meta"
-const DB_DIRECTORY = "/tmp/"
+const (
+	FILE_NAME = "bluck.data"
+	META_FILE_NAME = "bluck.meta"
+	DB_DIRECTORY = "/tmp/"
+)
 
+//
+// Open create the datafile and the metadata file if they do not exist.
+// Else if they exist, it load from the disk and mmap Data.
+//
 func (store *MmapKVStore) Open() {
 
 	f, err := os.OpenFile(DB_DIRECTORY + FILE_NAME, os.O_RDWR, 0644)
@@ -47,10 +53,19 @@ func (s *MmapKVStore) Get(k string) string {
 	return s.Dir.get(k)
 }
 
+//
+// Put insert data into the memory which is mapped on disk, but does not persit the metadata
+// If the store crashes in an inconsistent way (metadata != data), you need to use the recovery tool (RestoreMETA func)
+//
 func (s *MmapKVStore) Put(k, v string) {
 	s.Dir.put(k, v)
 }
 
+//
+// Close must be called at the end of the connection with the store, to persist safely the data and to persist metadata on disk.
+// The persistence of the metadata is only done in this method.
+// Usage : defer store.Close()
+//
 func (s *MmapKVStore) Close() {
 	s.Dir.data.Unmap()
 	s.Dir.dataFile.Close()

@@ -171,6 +171,22 @@ func BenchmarkMmapPut(b *testing.B) {
 
 }
 
+func BenchmarkMmapRangePut(b *testing.B) {
+	store := &MmapKVStore{}
+	store.Rm()
+	store.Open()
+	defer store.Close()
+
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		for i := 0; i < 1000000; i ++ {
+
+			store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
+		}
+	}
+
+}
+
 func setup() {
 	store := &MmapKVStore{}
 	store.Rm()

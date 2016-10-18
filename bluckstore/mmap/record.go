@@ -9,35 +9,44 @@ const (
 	RECORD_TOTAL_HEADER_SIZE = 4
 )
 
+//
+// This interface is for documentation purpose only.
+// A Record is composed of two byte arrays for key and value data, and footers that contain meta info for variable length data.
+// In theory, A key or a value could not excead 16384 bytes length (uint16 is used to store length).
+// But at the moment, there is no logic to handle a record length higher than a Page (4096 bytes)
+//
 type Record interface {
-	Key() []byte
-	Val() []byte
-	KeyLen() uint16
-	ValLen() uint16
+	key() []byte
+	val() []byte
+	keyLen() uint16
+	valLen() uint16
 }
 
 type RecordWriter interface {
 	Write(key, val string)
 }
 
+//
+// A Record that is mapped on a byte slice
+//
 type ByteRecord []byte
 
-func (r ByteRecord) Key() []byte {
+func (r ByteRecord) key() []byte {
 	l := len(r)
-	return r[l-RECORD_TOTAL_HEADER_SIZE-int(r.KeyLen())-int(r.ValLen()) : l-RECORD_TOTAL_HEADER_SIZE-int(r.ValLen())]
+	return r[l-RECORD_TOTAL_HEADER_SIZE-int(r.keyLen())-int(r.valLen()) : l-RECORD_TOTAL_HEADER_SIZE-int(r.valLen())]
 }
 
-func (r ByteRecord) Val() []byte {
+func (r ByteRecord) val() []byte {
 	l := len(r)
-	return r[l-RECORD_TOTAL_HEADER_SIZE-int(r.ValLen()) : l-RECORD_TOTAL_HEADER_SIZE]
+	return r[l-RECORD_TOTAL_HEADER_SIZE-int(r.valLen()) : l-RECORD_TOTAL_HEADER_SIZE]
 }
 
-func (r ByteRecord) KeyLen() uint16 {
+func (r ByteRecord) keyLen() uint16 {
 	l := len(r)
 	return binary.LittleEndian.Uint16(r[l-RECORD_HEADER_SIZE:])
 }
 
-func (r ByteRecord) ValLen() uint16 {
+func (r ByteRecord) valLen() uint16 {
 	l := len(r)
 	return binary.LittleEndian.Uint16(r[l-RECORD_TOTAL_HEADER_SIZE:])
 }

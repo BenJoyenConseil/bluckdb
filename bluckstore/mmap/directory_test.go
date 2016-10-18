@@ -120,9 +120,9 @@ func TestDirectory_Split(t *testing.T) {
 
 	// Then
 	assert.Equal(t, "key0value yop yop", string(p1[0:17]))
-	assert.Equal(t, 21, p1.use())
+	assert.Equal(t, 21, p1.Use())
 	assert.Equal(t, "key1value yop yop", string(p2[0:17]))
-	assert.Equal(t, 21, p2.use())
+	assert.Equal(t, 21, p2.Use())
 }
 
 func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
@@ -133,16 +133,16 @@ func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
 	page := Page(make([]byte, PAGE_SIZE))
 	page.setLd(0)
 	fillPage(page, 2)
-	page.put("key0", "value updated")
+	page.Put("key0", "value updated")
 
 	// When
 	p1, p2 := d.split(page)
 
 	// Then
 	assert.Equal(t, "key0value updated", string(p1[0:17]))
-	assert.Equal(t, 21, p1.use())
+	assert.Equal(t, 21, p1.Use())
 	assert.Equal(t, "key1value yop yop", string(p2[0:17]))
-	assert.Equal(t, 21, p2.use())
+	assert.Equal(t, 21, p2.Use())
 }
 
 func TestDirectory_NextPageId(t *testing.T) {
@@ -312,7 +312,7 @@ func TestDirectory_Put_SameKey(t *testing.T) {
 func fillPage(page Page, numberOfRecord int) {
 	for i := 0; i < numberOfRecord; i++ {
 		itoa := strconv.Itoa(i)
-		page.put("key"+itoa, "value yop yop")
+		page.Put("key"+itoa, "value yop yop")
 	}
 }
 

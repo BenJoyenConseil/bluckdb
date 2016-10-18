@@ -73,7 +73,7 @@ func TestGet(t *testing.T) {
 	// end record
 
 	// When
-	result, err := p.get("key1")
+	result, err := p.Get("key1")
 
 	// Then
 	assert.Equal(t, "Yolo !", string(result))
@@ -95,7 +95,7 @@ func TestGet_ShouldReturnEmptyStringWhenKeyDoesntExist(t *testing.T) {
 	// end record
 
 	// When
-	result, err := p.get("key321")
+	result, err := p.Get("key321")
 
 	// Then
 	assert.Empty(t, string(result))
@@ -109,10 +109,10 @@ func TestPut_UseShouldBeIncrementedWithThePayloadOfTheNewRecord(t *testing.T) {
 	v := "Yolo !" // len (=2) + value (=6) = 8 bytes
 
 	// When
-	p.put(k, v)
+	p.Put(k, v)
 
 	// Then
-	assert.Equal(t, 14, p.use())
+	assert.Equal(t, 14, p.Use())
 }
 
 func TestPut_(t *testing.T) {
@@ -122,8 +122,8 @@ func TestPut_(t *testing.T) {
 	v := "Yolo !"
 
 	// When
-	p.put(k, v)
-	p.put(k, "Yolo updated !")
+	p.Put(k, v)
+	p.Put(k, "Yolo updated !")
 
 	// Then
 	lenKey := binary.LittleEndian.Uint16(p[12:14])
@@ -152,7 +152,7 @@ func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testin
 	v := "Yolo !"
 
 	// When
-	result := p.put(k, v)
+	result := p.Put(k, v)
 
 	// Then
 	assert.Equal(t, errors.New("The page is full."), result)
@@ -163,7 +163,7 @@ func BenchmarkPagePut(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var p Page = make([]byte, PAGE_SIZE)
 		for i := 0; i < 100 ; i++ {
-			p.put("key", "mec, elle est où ma caisse ??")
+			p.Put("key", "mec, elle est où ma caisse ??")
 		}
 	}
 	fmt.Println(b.N)
@@ -172,12 +172,12 @@ func BenchmarkPagePut(b *testing.B) {
 func BenchmarkPageGet(b *testing.B) {
 	var p Page = make([]byte, PAGE_SIZE)
 	for n := 0; n < 150; n++ {
-		p.put("key" + strconv.Itoa(n), "mec, elle est où ma caisse ??")
+		p.Put("key" + strconv.Itoa(n), "mec, elle est où ma caisse ??")
 	}
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		p.get("key" + strconv.Itoa(n % 150))
+		p.Get("key" + strconv.Itoa(n % 150))
 	}
 	fmt.Println(b.N)
 }

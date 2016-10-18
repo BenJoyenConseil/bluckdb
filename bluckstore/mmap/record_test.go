@@ -17,7 +17,7 @@ func TestByteRecord_Key(t *testing.T) {
 	// Given
 
 	// When
-	result := r.Key()
+	result := r.key()
 
 	// Then
 	assert.Equal(t, "12345", string(result))
@@ -34,7 +34,7 @@ func TestByteRecord_Key_WhenSliceIsBiggerThanRecord(t *testing.T) {
 	})
 
 	// When
-	result := r.Key()
+	result := r.key()
 
 	// Then
 	assert.Equal(t, "12345", string(result))
@@ -44,7 +44,7 @@ func TestByteRecord_Val(t *testing.T) {
 	// Given
 
 	// When
-	result := r.Val()
+	result := r.val()
 
 	// Then
 	assert.Equal(t, "Yolo", string(result))
@@ -61,7 +61,7 @@ func TestByteRecord_Val_WhenSliceIsBiggerThanRecord(t *testing.T) {
 	})
 
 	// When
-	result := r.Val()
+	result := r.val()
 
 	// Then
 	assert.Equal(t, "Yolo", string(result))
@@ -71,7 +71,7 @@ func TestByteRecord_KeyLen(t *testing.T) {
 	// Given
 
 	// When
-	result := r.KeyLen()
+	result := r.keyLen()
 
 	// Then
 	assert.Equal(t, uint16(5), result)
@@ -81,7 +81,7 @@ func TestByteRecord_ValLen(t *testing.T) {
 	// Given
 
 	// When
-	result := r.ValLen()
+	result := r.valLen()
 
 	// Then
 	assert.Equal(t, uint16(4), result)

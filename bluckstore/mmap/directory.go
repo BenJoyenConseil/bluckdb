@@ -30,7 +30,7 @@ func (dir *Directory) getPage(k string) (Page, int) {
 
 func (dir *Directory) get(k string) string {
 	p, _ := dir.getPage(k)
-	val, _ := p.get(k)
+	val, _ := p.Get(k)
 	return val
 }
 
@@ -51,11 +51,11 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 	p1 = make([]byte, PAGE_SIZE)
 	p2 = make([]byte, PAGE_SIZE)
 
-	it := &PageIterator{p: page, current: page.use()}
+	it := &PageIterator{p: page, current: page.Use()}
 
-	for it.hasNext() {
-		r := it.next()
-		k := string(r.Key())
+	for it.HasNext() {
+		r := it.Next()
+		k := string(r.key())
 		if _, ok := lookup[k]; ok {
 			// this record is skipped because a younger version exists, garbage collection of older version
 			continue
@@ -65,9 +65,9 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 		h := util.Key(k).Hash() & ((1 << dir.Gd) - 1)
 
 		if (h>>uint(page.ld()))&1 == 1 {
-			p2.put(k, string(r.Val()))
+			p2.Put(k, string(r.val()))
 		} else {
-			p1.put(k, string(r.Val()))
+			p1.Put(k, string(r.val()))
 		}
 	}
 	return p1, p2
@@ -98,7 +98,7 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 
 func (dir *Directory) put(key, value string) {
 	page, id := dir.getPage(key)
-	err := page.put(key, value)
+	err := page.Put(key, value)
 
 	if err != nil {
 		// TODO : log trace err
