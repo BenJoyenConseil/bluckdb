@@ -20,7 +20,7 @@ const PAGE_LOCAL_DEPTH_OFFSET = 4092
 
 //
 // Read the Trailer of the Page where Use is stored (4094).
-// Do LittleEndian unserialization on a 2 bytes slice
+// Do LittleEndian deserialization on a 2 bytes slice
 //
 func (p Page) use() int {
 	return int(binary.LittleEndian.Uint16(p[PAGE_USE_OFFSET:]))
@@ -66,7 +66,7 @@ func (p Page) get(k string) (v string, err error) {
 func (p Page) put(k, v string) error {
 	payload := len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE
 
-	// TODO : should p.rest() be keeped in memory to skip the task of unserialization ?
+	// TODO : should p.rest() be keeped in memory to skip the task of deserialization ?
 	if p.rest() >= payload {
 
 		use := p.use()
