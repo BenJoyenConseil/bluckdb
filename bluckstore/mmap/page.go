@@ -69,6 +69,8 @@ func (p Page) Get(k string) (v string, err error) {
 // It checks if the page's available space is more than the record size.
 // If so, it writes record after the last offset given by page.use()
 // If not, it returns an error.
+// There is no lookup in this function to know if the key already exists.
+// It is append only, so the duplicates will be garbage collected during the next split of the page.
 //
 func (p Page) Put(k, v string) error {
 	payload := len(k) + len(v) + RECORD_TOTAL_HEADER_SIZE
