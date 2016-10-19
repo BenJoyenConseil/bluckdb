@@ -63,5 +63,5 @@ func (r ByteRecord) Write(key, val string) {
 	copy(r[:], key)
 	copy(r[lenKey:], val)
 	binary.LittleEndian.PutUint16(r[total:], lenVal)
-	binary.LittleEndian.PutUint16(r[total + RECORD_HEADER_SIZE:], lenKey)
+	binary.LittleEndian.PutUint16(r[total+RECORD_HEADER_SIZE:], lenKey)
 }

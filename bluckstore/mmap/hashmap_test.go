@@ -1,10 +1,10 @@
 package mmap
 
 import (
-	"testing"
-	"strconv"
-	"os"
 	"math/rand"
+	"os"
+	"strconv"
+	"testing"
 )
 
 func BenchmarkHashmapGet(b *testing.B) {
@@ -21,8 +21,6 @@ func BenchmarkHashmapGet(b *testing.B) {
 		devNull.Write([]byte(store[strconv.Itoa(rand.Intn(10000-1))]))
 	}
 }
-
-
 
 func BenchmarkHashmapPut(b *testing.B) {
 	store := make(map[string]string)

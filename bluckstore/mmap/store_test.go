@@ -1,13 +1,13 @@
 package mmap
 
 import (
+	"bytes"
+	"encoding/gob"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
-	"bytes"
-	"encoding/gob"
 )
 
 func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
@@ -24,7 +24,7 @@ func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
 
 	// Then
 	assert.Equal(t, PAGE_SIZE, len(store.Dir.data))
-	assert.Equal(t, DB_DIRECTORY + FILE_NAME, store.Dir.dataFile.Name())
+	assert.Equal(t, DB_DIRECTORY+FILE_NAME, store.Dir.dataFile.Name())
 	assert.Equal(t, []int{0}, store.Dir.Table)
 	assert.Equal(t, 0, int(store.Dir.Gd))
 	assert.Equal(t, "KEYVALUE", string(store.Dir.data[0:8]))
@@ -35,7 +35,7 @@ func TestMmapKVStore_Close_ShouldWriteMetadata(t *testing.T) {
 	// Given
 	store := &MmapKVStore{
 		Dir: &Directory{
-			Gd: 2,
+			Gd:         2,
 			LastPageId: 4,
 		},
 	}
@@ -57,15 +57,15 @@ func TestDecodeMeta(t *testing.T) {
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
 	enc.Encode(Directory{
-		Gd: 1,
+		Gd:         1,
 		LastPageId: 2,
-		Table: []int {0, 1, 0, 2},
+		Table:      []int{0, 1, 0, 2},
 	})
 
 	// When
 	result := DecodeMeta(&buff)
 
-	 // Then
+	// Then
 	assert.Equal(t, 2, result.LastPageId)
 	assert.Equal(t, []int{0, 1, 0, 2}, result.Table)
 	assert.Equal(t, 1, int(result.Gd))
@@ -74,15 +74,15 @@ func TestDecodeMeta(t *testing.T) {
 func TestEncodeMeta(t *testing.T) {
 	// Given
 	dir := &Directory{
-		Gd: 1,
+		Gd:         1,
 		LastPageId: 2,
-		Table: []int {0, 1, 0, 2},
+		Table:      []int{0, 1, 0, 2},
 	}
 
 	// When
 	result := EncodeMeta(dir)
 
-	 // Then
+	// Then
 	var r Directory
 	dec := gob.NewDecoder(result)
 	dec.Decode(&r)
@@ -150,7 +150,6 @@ func TestFindBucketNumber(t *testing.T) {
 	// Given
 	fileSize := int64(65216512)
 
-
 	// When
 	result := FindBucketNumber(fileSize)
 
@@ -179,7 +178,7 @@ func BenchmarkMmapRangePut(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		for i := 0; i < 1000000; i ++ {
+		for i := 0; i < 1000000; i++ {
 
 			store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
 		}
@@ -209,4 +208,3 @@ func BenchmarkMmapGet(b *testing.B) {
 		store.Get(strconv.Itoa(rand.Intn(1000000 - 1)))
 	}
 }
-

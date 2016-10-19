@@ -3,10 +3,10 @@ package mmap
 import (
 	"encoding/binary"
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"testing"
-	"strconv"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"strconv"
+	"testing"
 )
 
 func TestRest_DefaultIsPAGE_LOCAL_DEPTH_OFFSET(t *testing.T) {
@@ -162,7 +162,7 @@ func BenchmarkPagePut(b *testing.B) {
 
 	for n := 0; n < b.N; n++ {
 		var p Page = make([]byte, PAGE_SIZE)
-		for i := 0; i < 100 ; i++ {
+		for i := 0; i < 100; i++ {
 			p.Put("key", "mec, elle est où ma caisse ??")
 		}
 	}
@@ -172,12 +172,12 @@ func BenchmarkPagePut(b *testing.B) {
 func BenchmarkPageGet(b *testing.B) {
 	var p Page = make([]byte, PAGE_SIZE)
 	for n := 0; n < 150; n++ {
-		p.Put("key" + strconv.Itoa(n), "mec, elle est où ma caisse ??")
+		p.Put("key"+strconv.Itoa(n), "mec, elle est où ma caisse ??")
 	}
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		p.Get("key" + strconv.Itoa(n % 150))
+		p.Get("key" + strconv.Itoa(n%150))
 	}
 	fmt.Println(b.N)
 }

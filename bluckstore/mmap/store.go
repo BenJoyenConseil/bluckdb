@@ -1,11 +1,11 @@
 package mmap
 
 import (
-	"os"
-	"fmt"
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 type MmapKVStore struct {
@@ -13,9 +13,9 @@ type MmapKVStore struct {
 }
 
 const (
-	FILE_NAME = "bluck.data"
+	FILE_NAME      = "bluck.data"
 	META_FILE_NAME = "bluck.meta"
-	DB_DIRECTORY = "/tmp/"
+	DB_DIRECTORY   = "/tmp/"
 )
 
 //
@@ -24,7 +24,7 @@ const (
 //
 func (store *MmapKVStore) Open() {
 
-	f, err := os.OpenFile(DB_DIRECTORY + FILE_NAME, os.O_RDWR, 0644)
+	f, err := os.OpenFile(DB_DIRECTORY+FILE_NAME, os.O_RDWR, 0644)
 	defer f.Close()
 
 	if err != nil {
@@ -69,7 +69,7 @@ func (s *MmapKVStore) Put(k, v string) {
 func (s *MmapKVStore) Close() {
 	s.Dir.data.Unmap()
 	s.Dir.dataFile.Close()
-	metaFile, err := os.OpenFile(DB_DIRECTORY + META_FILE_NAME, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
+	metaFile, err := os.OpenFile(DB_DIRECTORY+META_FILE_NAME, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer metaFile.Close()
 
 	if err != nil {
@@ -104,7 +104,7 @@ func (s *MmapKVStore) RestoreMETA() {
 				store.Dir.Table[i] = i
 			}
 		}
-	 */
+	*/
 }
 
 func FindBucketNumber(fileSize int64) int64 {
@@ -112,7 +112,7 @@ func FindBucketNumber(fileSize int64) int64 {
 }
 
 func FindTwoToPowerOfN(v uint) uint {
-	for i :=  uint(1); ;i++ {
+	for i := uint(1); ; i++ {
 		if (v >> i) <= 0 {
 			return i
 			break
@@ -139,7 +139,7 @@ func DecodeMeta(buff *bytes.Buffer) *Directory {
 	return &dir
 }
 
-func EncodeMeta(dir *Directory) *bytes.Buffer{
+func EncodeMeta(dir *Directory) *bytes.Buffer {
 	var buff bytes.Buffer
 	enc := gob.NewEncoder(&buff)
 	enc.Encode(&dir)

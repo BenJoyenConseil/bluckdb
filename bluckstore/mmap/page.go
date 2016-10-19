@@ -15,8 +15,8 @@ import (
 type Page []byte
 
 const (
-	PAGE_SIZE = 4096
-	PAGE_USE_OFFSET = 4094
+	PAGE_SIZE               = 4096
+	PAGE_USE_OFFSET         = 4094
 	PAGE_LOCAL_DEPTH_OFFSET = 4092
 )
 
@@ -79,9 +79,9 @@ func (p Page) Put(k, v string) error {
 	if p.rest() >= payload {
 
 		use := p.Use()
-		r := ByteRecord(p[use : use + payload])
+		r := ByteRecord(p[use : use+payload])
 		r.Write(k, v)
-		binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], uint16(use + payload))
+		binary.LittleEndian.PutUint16(p[PAGE_USE_OFFSET:], uint16(use+payload))
 
 		return nil
 	}

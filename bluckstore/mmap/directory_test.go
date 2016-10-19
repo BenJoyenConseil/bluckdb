@@ -207,12 +207,12 @@ func TestDirectory_Put_ShouldIncreaseSize_WhenFileIsFull(t *testing.T) {
 	os.Remove(fPath)
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer f.Close()
-	f.Write(make([]byte, PAGE_SIZE * 4))
+	f.Write(make([]byte, PAGE_SIZE*4))
 	dir := &Directory{
-		dataFile: f,
-		data: mmap.MMap(make([]byte, PAGE_SIZE * 4)),
+		dataFile:   f,
+		data:       mmap.MMap(make([]byte, PAGE_SIZE*4)),
 		LastPageId: 3,
-		Table: []int{0, 2, 1, 3},
+		Table:      []int{0, 2, 1, 3},
 	}
 
 	var page Page = Page(dir.data[0:PAGE_SIZE])
@@ -223,8 +223,8 @@ func TestDirectory_Put_ShouldIncreaseSize_WhenFileIsFull(t *testing.T) {
 
 	// Then
 	stats, _ := dir.dataFile.Stat()
-	assert.Equal(t, int64(PAGE_SIZE * 8), stats.Size())
-	assert.Equal(t, PAGE_SIZE * 8, len(dir.data))
+	assert.Equal(t, int64(PAGE_SIZE*8), stats.Size())
+	assert.Equal(t, PAGE_SIZE*8, len(dir.data))
 	os.Remove(fPath)
 }
 

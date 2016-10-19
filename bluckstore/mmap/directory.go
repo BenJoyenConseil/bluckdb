@@ -40,7 +40,7 @@ func (dir *Directory) expand() {
 }
 
 func (dir *Directory) increaseSize() {
-	stats,_ := dir.dataFile.Stat()
+	stats, _ := dir.dataFile.Stat()
 	size := stats.Size()
 	dir.dataFile.WriteAt(make([]byte, size), int64(size))
 	dir.mmapDataFile()
@@ -112,11 +112,11 @@ func (dir *Directory) put(key, value string) {
 			p1.setLd(page.ld() + 1)
 			p2.setLd(page.ld() + 1)
 
-			if(id2 * PAGE_SIZE >= len(dir.data)) {
+			if id2*PAGE_SIZE >= len(dir.data) {
 				dir.increaseSize()
 			}
-			copy(dir.data[id1 * PAGE_SIZE : id1 * PAGE_SIZE + PAGE_SIZE], p1)
-			copy(dir.data[id2 * PAGE_SIZE : id2 * PAGE_SIZE + PAGE_SIZE], p2)
+			copy(dir.data[id1*PAGE_SIZE:id1*PAGE_SIZE+PAGE_SIZE], p1)
+			copy(dir.data[id2*PAGE_SIZE:id2*PAGE_SIZE+PAGE_SIZE], p2)
 
 			dir.put(key, value)
 		}
@@ -126,7 +126,7 @@ func (dir *Directory) put(key, value string) {
 
 func (dir *Directory) mmapDataFile() {
 	var err error
-	dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR | syscall.MAP_POPULATE, 0644)
+	dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR|syscall.MAP_POPULATE, 0644)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -1,13 +1,13 @@
 package mmap
 
 import (
-	"github.com/boltdb/bolt"
-	"testing"
-	"strconv"
-	"log"
 	"fmt"
-	"os"
+	"github.com/boltdb/bolt"
+	"log"
 	"math/rand"
+	"os"
+	"strconv"
+	"testing"
 )
 
 func BenchmarkBoltDBPut(b *testing.B) {
@@ -37,8 +37,6 @@ func BenchmarkBoltDBPut(b *testing.B) {
 	}
 
 }
-
-
 
 func setupBolt() {
 	tableName := "table_test"
