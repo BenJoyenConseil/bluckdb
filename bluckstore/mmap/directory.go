@@ -8,6 +8,8 @@ import (
 	"github.com/edsrzf/mmap-go"
 	"os"
 	"syscall"
+	"github.com/kataras/go-errors"
+	"strconv"
 )
 
 type Directory struct {
@@ -22,14 +24,29 @@ func (dir *Directory) extendibleHash(k util.Hashable) int {
 	return k.Hash() & ((1 << dir.Gd) - 1)
 }
 
-func (dir *Directory) getPage(k string) (Page, int) {
-	id := dir.Table[dir.extendibleHash(util.Key(k))]
+func (dir *Directory) getPage(k string) (Page, int, error) {
+	hash := dir.extendibleHash(util.Key(k))
+
+	if hash > len(dir.Table) -1 {
+		return nil, -1, errors.New("hash (" + strconv.Itoa(hash) + ") out of Table (" + strconv.Itoa(len(dir.Table)) + ")")
+	}
+
+
+	id := dir.Table[hash]
 	offset := id * PAGE_SIZE
-	return Page(dir.data[offset : offset+PAGE_SIZE]), id
+
+	if offset + PAGE_SIZE > len(dir.data) {
+		return nil, -1, errors.New("offset (" + strconv.Itoa(offset+PAGE_SIZE) + ") out of data (" + strconv.Itoa(len(dir.data)) + ")")
+	}
+	return Page(dir.data[offset : offset+PAGE_SIZE]), id, nil
 }
 
 func (dir *Directory) get(k string) string {
-	p, _ := dir.getPage(k)
+	p, _, err := dir.getPage(k)
+	if err != nil {
+		return ""
+	}
+
 	val, _ := p.Get(k)
 	return val
 }
@@ -97,7 +114,7 @@ func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
 }
 
 func (dir *Directory) put(key, value string) {
-	page, id := dir.getPage(key)
+	page, id, _ := dir.getPage(key)
 	err := page.Put(key, value)
 
 	if err != nil {
@@ -127,6 +144,7 @@ func (dir *Directory) put(key, value string) {
 func (dir *Directory) mmapDataFile() {
 	var err error
 	dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR|syscall.MAP_POPULATE, 0644)
+	fmt.Println("mmap data size = " + strconv.Itoa(len(dir.data)) + " bytes")
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"log"
 )
 
 type MmapKVStore struct {
@@ -67,6 +68,7 @@ func (s *MmapKVStore) Put(k, v string) {
 // Usage : defer store.Close()
 //
 func (s *MmapKVStore) Close() {
+	s.Dir.data.Flush()
 	s.Dir.data.Unmap()
 	s.Dir.dataFile.Close()
 	metaFile, err := os.OpenFile(DB_DIRECTORY+META_FILE_NAME, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -76,6 +78,7 @@ func (s *MmapKVStore) Close() {
 		fmt.Println(err)
 	}
 	metaFile.WriteAt(EncodeMeta(s.Dir).Bytes(), 0)
+	log.Print("Store closing : metadata are persisted")
 
 }
 

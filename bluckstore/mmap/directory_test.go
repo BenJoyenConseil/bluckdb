@@ -40,12 +40,43 @@ func TestDirectory_GetPage(t *testing.T) {
 	d.Table[11] = 2
 
 	// When
-	page, idPage := d.getPage(key)
+	page, idPage, err := d.getPage(key)
 
 	// Then
 	assert.Equal(t, 2, idPage)
+	assert.Nil(t, err)
 	assert.Equal(t, 8192, cap(page))
 	assert.Equal(t, PAGE_SIZE, len(page))
+}
+
+func TestDirectory_GetPage_ShouldReturnError_WhenOffsetIsNotLimitedToDataSize(t *testing.T) {
+	// Given
+	d := &Directory{
+		Table: make([]int, 1),
+	}
+	key := "123"
+
+	// When
+	page, idPage, err := d.getPage(key)
+
+	// Then
+	assert.Error(t, err, "key out of data")
+	assert.Equal(t, -1, idPage)
+	assert.Nil(t, page)
+}
+
+func TestDirectory_GetPage_ShouldReturnError_WhenPageIDIsOutOfTheTable(t *testing.T) {
+	// Given
+	d := &Directory{}
+	key := "123"
+
+	// When
+	page, idPage, err := d.getPage(key)
+
+	// Then
+	assert.Error(t, err, "key out of data")
+	assert.Equal(t, -1, idPage)
+	assert.Nil(t, page)
 }
 
 func TestDirectory_Get(t *testing.T) {
@@ -70,6 +101,18 @@ func TestDirectory_Get(t *testing.T) {
 
 	// Then
 	assert.Equal(t, "Hi", result)
+}
+
+func TestDirectory_Get_ShouldHandleError(t *testing.T) {
+	// Given
+	d := &Directory{}
+	key := "123"
+
+	// When
+	result := d.get(key)
+
+	// Then
+	assert.Equal(t, "", result)
 }
 
 func TestDirectory_Expand(t *testing.T) {
@@ -332,9 +375,6 @@ func TestDirectory_String(t *testing.T) {
 	assert.Equal(t, "{\"table\":[0,1,0,1],\"globalDepth\":1,\"LastPageId\":1}\n", result.String())
 }
 
-func BenchmarkDirectory_Put(b *testing.B) {
-
-}
 
 /*
 func TestDirectory_Gc(t *testing.T) {
