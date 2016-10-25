@@ -92,3 +92,17 @@ func TestIrisHandler_PUT(t *testing.T) {
 	fmt.Println(response.Text())
 	response.Status(http.StatusOK)
 }
+
+func TestIrisHandler_GET_DEBUG(t *testing.T) {
+	// Given
+	os.Remove("/tmp/bluck.data")
+	os.Remove("/tmp/bluck.meta")
+	tester := irisTester(t)
+
+	// When
+	response := tester.GET("/debug", ).WithQuery("page_id", "0").Expect()
+
+	// Then
+	fmt.Println(response.Text())
+	response.Status(http.StatusOK)
+}

@@ -7,12 +7,12 @@ It is a Key/Value store that implements bucketing based on [extendible hashing](
 The ``server.go`` file is a simple http server that answers on the 8080 port.
 
 
-There are 4 endpoints :
+There are 3 endpoints :
 
-    http://hostname:2233/get?key=<some_key>
-    http://hostname:2233/put?key=<some_key>&value=<some_value>
-    http://hostname:2233/meta
-    http://hostname:2233/debug?page_id=<id_of_the_page_to_display>
+    curl -XGET http://hostname:2233/?id=<key>
+    curl -XPUT -d 'value' http://hostname:2233/?id=<key>
+    curl -XGET http://hostname:2233/meta
+    curl -XGET http://hostname:2233/debug?page_id=<id_of_the_page_to_display>
 
 
 ## the goal

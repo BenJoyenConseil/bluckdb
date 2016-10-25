@@ -6,6 +6,9 @@ import (
 	"github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
 	"net/http"
 	"github.com/labstack/gommon/log"
+	"strconv"
+	"os"
+	"os/signal"
 )
 
 const (
@@ -17,13 +20,39 @@ type record struct {
 	Val string `json:"val"`
 }
 
+const (
+	logHeader  = "${time_rfc3339}\t[BluckServer]\t${level}\t"
+	logPrefix  = `${time_rfc3339}\t${level}\t${prefix}\t${short_file}\t${line}`
+)
+
 func main() {
+	log.EnableColor()
+	log.SetHeader(logHeader)
+	log.SetPrefix(logPrefix)
+
 	store := &mmap.MmapKVStore{}
 	store.Open()
 	defer store.Close()
 
-	log.Print("Server listening on port 2233")
-	fasthttp.ListenAndServe(":2233", IrisHandler(store))
+
+
+	go func() {
+		sigchan := make(chan os.Signal, 10)
+		signal.Notify(sigchan, os.Interrupt)
+		<-sigchan
+		log.Error("Program killed !")
+
+		store.Close()
+
+		os.Exit(0)
+	}()
+
+	log.Info("Launch the server to listen on port 2233...")
+	log.Info("Press ^Ĉ to exit")
+	err := fasthttp.ListenAndServe(":2233", IrisHandler(store))
+	if err != nil {
+		log.Infof("Error occured while trying to run http server : %s", err.Error())
+	}
 }
 
 func IrisHandler(store *mmap.MmapKVStore) fasthttp.RequestHandler {
@@ -41,7 +70,15 @@ func IrisHandler(store *mmap.MmapKVStore) fasthttp.RequestHandler {
 
 	api.Put("/", func(ctx *iris.Context) {
 		key := ctx.URLParam(idParam)
-		store.Put(key, string(ctx.PostBody()))
+		err := store.Put(key, string(ctx.PostBody()))
+
+		if err != nil {
+			type error struct {
+				Message string `json:"message"`
+			}
+			msg := &error{Message: err.Error()}
+			ctx.JSON(http.StatusRequestEntityTooLarge, msg)
+		}
 		ctx.SetStatusCode(http.StatusOK)
 	})
 
@@ -50,7 +87,8 @@ func IrisHandler(store *mmap.MmapKVStore) fasthttp.RequestHandler {
 	})
 
 	api.Get("/debug", func(ctx *iris.Context) {
-
+		pageId, _ := strconv.Atoi(ctx.Param("page_id"))
+		ctx.WriteString(store.DumpPage(pageId))
 	})
 
 	//api.Delete(tableName, func(ctx *iris.Context) {
