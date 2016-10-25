@@ -3,10 +3,10 @@ package mmap
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"io/ioutil"
 	"os"
-	"log"
+	"github.com/labstack/gommon/log"
+	"errors"
 )
 
 type MmapKVStore struct {
@@ -25,22 +25,26 @@ const (
 //
 func (store *MmapKVStore) Open() {
 
-	f, err := os.OpenFile(DB_DIRECTORY+FILE_NAME, os.O_RDWR, 0644)
+	dataFileName := DB_DIRECTORY + FILE_NAME
+	f, err := os.OpenFile(dataFileName, os.O_RDWR, 0644)
 	defer f.Close()
 
 	if err != nil {
-		f, _ = os.Create(DB_DIRECTORY + FILE_NAME)
-		fmt.Println("OpenFile DB error : " + err.Error())
+		log.Errorf("OpenFile DB error : %s", err.Error())
+		log.Infof("Try to create the file : %s", dataFileName)
+
+		f, _ = os.Create(dataFileName)
 		store.Dir = &Directory{
 			Gd:    0,
 			Table: make([]int, 1),
 		}
 		f.Write(make([]byte, PAGE_SIZE))
 	} else {
+		log.Infof("Datafile %s detected", dataFileName)
 		meta, err := ioutil.ReadFile(DB_DIRECTORY + META_FILE_NAME)
 
 		if err != nil {
-			fmt.Println("OpenFile Metadata error : " + err.Error())
+			log.Errorf("Error while trying to OpenFile Metadata : %s", err.Error())
 		} else {
 			store.Dir = DecodeMeta(bytes.NewBuffer(meta))
 		}
@@ -58,8 +62,13 @@ func (s *MmapKVStore) Get(k string) string {
 // Put inserts data into the memory which is mapped on disk, but does not persit the metadata
 // If the store crashes in an inconsistent way (metadata != data), you need to use the recovery tool (RestoreMETA func)
 //
-func (s *MmapKVStore) Put(k, v string) {
+func (s *MmapKVStore) Put(k, v string) error {
+	if len(k) + len(v) > 4091 {
+		return errors.New("The record is too long")
+	}
+
 	s.Dir.put(k, v)
+	return nil
 }
 
 //
@@ -75,11 +84,10 @@ func (s *MmapKVStore) Close() {
 	defer metaFile.Close()
 
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 	}
 	metaFile.WriteAt(EncodeMeta(s.Dir).Bytes(), 0)
-	log.Print("Store closing : metadata are persisted")
-
+	log.Info("Store closing : metadata are persisted")
 }
 
 func (s *MmapKVStore) Rm() {
@@ -147,4 +155,10 @@ func EncodeMeta(dir *Directory) *bytes.Buffer {
 	enc := gob.NewEncoder(&buff)
 	enc.Encode(&dir)
 	return &buff
+}
+
+func (s *MmapKVStore) DumpPage(pageId int) string {
+	start := pageId * 4096
+	end := start + 4096
+	return string(s.Dir.data[start:end])
 }

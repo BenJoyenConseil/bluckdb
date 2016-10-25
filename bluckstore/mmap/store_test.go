@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"github.com/edsrzf/mmap-go"
 )
 
 func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
@@ -155,6 +156,34 @@ func TestFindBucketNumber(t *testing.T) {
 
 	// Then
 	assert.Equal(t, int64(15922), result)
+}
+
+func TestMmapKVStore_DumpPage(t *testing.T) {
+	// Given
+	store := &MmapKVStore{
+		Dir: &Directory{
+			data: mmap.MMap(make([]byte, 4096)),
+			Table: make([]int, 1),
+		},
+	}
+	copy(store.Dir.data, "12345salut!")
+
+	// When
+	result := store.DumpPage(0)
+
+	// Then
+	assert.Contains(t, result, "12345salut!")
+}
+
+func TestMmapKVStore_Put(t *testing.T) {
+	// Given
+	store := &MmapKVStore{}
+
+	// When
+	err := store.Put("1234", string(make([]byte, 4092)))
+
+	// Then
+	assert.NotNil(t, err)
 }
 
 func BenchmarkMmapPut(b *testing.B) {
