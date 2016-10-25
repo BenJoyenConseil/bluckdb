@@ -4,7 +4,7 @@
 
 It is a Key/Value store that implements bucketing based on [extendible hashing](https://en.wikipedia.org/wiki/Extendible_hashing)
 
-The ``server.go`` file is a simple http server that answers on the 8080 port.
+The ``server.go`` file is a simple http server that answers on the 2233 port.
 
 
 There are 3 endpoints :
@@ -57,8 +57,9 @@ If you run a go program for the first time, do not forget to setup your GOPATH :
 
     go run server.go
 
+It runs an httpserver with an instance of MmapKVStore which opens/creates the datafile on the /tmp/bluck.data path. 
 
-Note : Go will silently exit if a process is already using **port 2233**
+Note : the path will change in the futur.
 
 ## Benchmarks
     
