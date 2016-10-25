@@ -3,13 +3,12 @@ package mmap
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/BenJoyenConseil/bluckdb/util"
 	"github.com/edsrzf/mmap-go"
 	"os"
 	"syscall"
-	"github.com/kataras/go-errors"
-	"strconv"
+	"github.com/labstack/gommon/log"
+	"fmt"
 )
 
 type Directory struct {
@@ -28,7 +27,7 @@ func (dir *Directory) getPage(k string) (Page, int, error) {
 	hash := dir.extendibleHash(util.Key(k))
 
 	if hash > len(dir.Table) -1 {
-		return nil, -1, errors.New("hash (" + strconv.Itoa(hash) + ") out of Table (" + strconv.Itoa(len(dir.Table)) + ")")
+		return nil, -1, fmt.Errorf("hash (%d) out of the Table array %d", hash, len(dir.Table))
 	}
 
 
@@ -36,7 +35,7 @@ func (dir *Directory) getPage(k string) (Page, int, error) {
 	offset := id * PAGE_SIZE
 
 	if offset + PAGE_SIZE > len(dir.data) {
-		return nil, -1, errors.New("offset (" + strconv.Itoa(offset+PAGE_SIZE) + ") out of data (" + strconv.Itoa(len(dir.data)) + ")")
+		return nil, -1, fmt.Errorf("offset (%d) out of the data array %d", offset + PAGE_SIZE, len(dir.data))
 	}
 	return Page(dir.data[offset : offset+PAGE_SIZE]), id, nil
 }
@@ -95,9 +94,9 @@ func (dir *Directory) nextPageId() int {
 	return dir.LastPageId
 }
 
-func (dir *Directory) replace(obsoletePageId int, ld uint) (p1, p2 int) {
-	p1Id := obsoletePageId
-	p2Id := dir.nextPageId()
+func (dir *Directory) replace(obsoletePageId int, ld uint) (p1Id, p2Id int) {
+	p1Id = obsoletePageId
+	p2Id = dir.nextPageId()
 
 	for i := 0; i < len(dir.Table); i++ {
 		if obsoletePageId != dir.Table[i] {
@@ -144,9 +143,10 @@ func (dir *Directory) put(key, value string) {
 func (dir *Directory) mmapDataFile() {
 	var err error
 	dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR|syscall.MAP_POPULATE, 0644)
-	fmt.Println("mmap data size = " + strconv.Itoa(len(dir.data)) + " bytes")
+
+	log.Debugf("mmap data size = %d bytes", len(dir.data))
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 	}
 }
 
