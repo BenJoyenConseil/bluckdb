@@ -63,7 +63,7 @@ func (s *MmapKVStore) Get(k string) string {
 // If the store crashes in an inconsistent way (metadata != data), you need to use the recovery tool (RestoreMETA func)
 //
 func (s *MmapKVStore) Put(k, v string) error {
-	if len(k) + len(v) > 4091 {
+	if len(k) + len(v) > 2045 {
 		return errors.New("The record is too long")
 	}
 

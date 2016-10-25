@@ -175,12 +175,13 @@ func TestMmapKVStore_DumpPage(t *testing.T) {
 	assert.Contains(t, result, "12345salut!")
 }
 
-func TestMmapKVStore_Put(t *testing.T) {
+func TestMmapKVStore_Put_WhenRecordPayloadIsToBig(t *testing.T) {
 	// Given
 	store := &MmapKVStore{}
 
 	// When
-	err := store.Put("1234", string(make([]byte, 4092)))
+	err := store.Put("1234", string(make([]byte, 2046)))
+	err = store.Put("1234", string(make([]byte, 2046)))
 
 	// Then
 	assert.NotNil(t, err)
