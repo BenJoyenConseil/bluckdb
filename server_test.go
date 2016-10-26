@@ -19,11 +19,12 @@ func irisTester(t *testing.T) *httpexpect.Expect {
 		stores: make(map[string]bluckstore.KVStore),
 	}
 	handler := IrisHandler(server)
+	handler.Build()
 
 	return httpexpect.WithConfig(httpexpect.Config{
 		BaseURL: "http://localhost:2233",
 		Client: &http.Client{
-			Transport: httpexpect.NewFastBinder(handler),
+			Transport: httpexpect.NewFastBinder(handler.Router),
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),

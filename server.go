@@ -5,7 +5,6 @@ import (
 	"github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
 	"github.com/kataras/iris"
 	"github.com/labstack/gommon/log"
-	"github.com/valyala/fasthttp"
 	"net/http"
 	"os"
 	"os/signal"
@@ -56,13 +55,15 @@ func main() {
 	log.Info("Launch the server to listen on port 2233...")
 	log.Info("Press ^Ĉ to exit")
 
-	err := fasthttp.ListenAndServe(":2233", IrisHandler(server))
-	if err != nil {
-		log.Infof("Error occured while trying to run http server : %s", err.Error())
-	}
+	api := IrisHandler(server)
+
+	api.Set(iris.OptionDisableBanner(true))
+	api.Set(iris.OptionDisablePathCorrection(true))
+	//api.Set(iris.OptionMaxConnsPerIP(1))
+	api.Listen(":2233")
 }
 
-func IrisHandler(server *server) fasthttp.RequestHandler {
+func IrisHandler(server *server) *iris.Framework {
 	api := iris.New()
 
 	apiV1 := api.Party(v1Path)
@@ -113,8 +114,7 @@ func IrisHandler(server *server) fasthttp.RequestHandler {
 	//
 	//})
 
-	api.Build()
-	return api.Router
+	return api
 }
 
 func extractDynamicPath(fixedPath string, fullPath string) string {
