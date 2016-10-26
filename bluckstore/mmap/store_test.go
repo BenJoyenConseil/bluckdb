@@ -3,12 +3,12 @@ package mmap
 import (
 	"bytes"
 	"encoding/gob"
+	"github.com/edsrzf/mmap-go"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
-	"github.com/edsrzf/mmap-go"
 )
 
 func TestStoreOpen_shouldReOpen_UsingMeta(t *testing.T) {
@@ -25,34 +25,31 @@ func TestStoreOpen_shouldReOpen_UsingMeta(t *testing.T) {
 
 	// Then
 	assert.Equal(t, PAGE_SIZE, len(store.Dir.data))
-	assert.Equal(t, DB_DEFAULT_FOLDER +FILE_NAME, store.Dir.dataFile.Name())
+	assert.Equal(t, DB_DEFAULT_FOLDER+FILE_NAME, store.Dir.dataFile.Name())
 	assert.Equal(t, []int{0}, store.Dir.Table)
 	assert.Equal(t, 0, int(store.Dir.Gd))
 	assert.Equal(t, "KEYVALUE", string(store.Dir.data[0:8]))
 	store.Close()
 }
 
-func TestMmapKVStore_Close_ShouldWriteMetadata_UsingTheStoreFolderAttribute(t *testing.T) {
+func TestMmapKVStore_Close_ShouldCreateMetadataFile_UsingTheStoreFolderAttribute(t *testing.T) {
 	// Given
 	store := &MmapKVStore{
 		Dir: &Directory{
 			Gd:         2,
 			LastPageId: 4,
 		},
-		folder: "/tmp/bluckdb/exotic/path/",
+		Path: "/tmp/",
 	}
 
 	// When
 	store.Close()
 
 	// Then
-	f, err := os.Open(store.folder + META_FILE_NAME)
-	var meta []byte = make([]byte, 100)
-	f.Read(meta)
+	f, err := os.Open(store.Path + META_FILE_NAME)
 	assert.NotNil(t, f)
 	assert.Nil(t, err)
-	assert.NotNil(t, meta)
-	assert.Nil(t, os.Remove(store.folder + "bluck.meta"))
+	assert.Nil(t, os.Remove(store.Path+"bluck.meta"))
 	os.RemoveAll("/tmp/bluckdb")
 }
 
@@ -126,7 +123,7 @@ func TestMmapKVStore_Open_shouldCreateNewFileWhenNotExisting_UsingFSFolder(t *te
 	assert.Equal(t, []int{0}, store.Dir.Table)
 	assert.Equal(t, 0, int(store.Dir.Gd))
 	assert.Equal(t, 0, store.Dir.LastPageId)
-	assert.Nil(t, os.Remove(fsFolder + "bluck.data"))
+	assert.Nil(t, os.Remove(fsFolder+"bluck.data"))
 	store.Close()
 	os.RemoveAll("/tmp/bluckdb")
 }
@@ -168,7 +165,7 @@ func TestMmapKVStore_DumpPage(t *testing.T) {
 	// Given
 	store := &MmapKVStore{
 		Dir: &Directory{
-			data: mmap.MMap(make([]byte, 4096)),
+			data:  mmap.MMap(make([]byte, 4096)),
 			Table: make([]int, 1),
 		},
 	}

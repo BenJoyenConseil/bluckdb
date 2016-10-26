@@ -3,20 +3,20 @@ package mmap
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
+	"github.com/labstack/gommon/log"
 	"io/ioutil"
 	"os"
-	"github.com/labstack/gommon/log"
-	"errors"
 )
 
 type MmapKVStore struct {
-	Dir *Directory
-	folder string
+	Dir  *Directory
+	Path string
 }
 
 const (
-	FILE_NAME      = "bluck.data"
-	META_FILE_NAME = "bluck.meta"
+	FILE_NAME         = "bluck.data"
+	META_FILE_NAME    = "bluck.meta"
 	DB_DEFAULT_FOLDER = "/tmp/"
 )
 
@@ -24,20 +24,20 @@ const (
 // Open create the datafile and the metadata file if they do not exist.
 // Else if they exist, it loads from the disk and mmap the datafile.
 //
-func (store *MmapKVStore) Open(fsFolder string) {
+func (store *MmapKVStore) Open(absolutePath string) {
 
-	store.folder = fsFolder
-	err := os.MkdirAll(store.folder, 0777)
+	store.Path = absolutePath
+	err := os.MkdirAll(store.Path, 0777)
 	if err != nil {
-		log.Errorf("Mkdir %s impossible : %s", fsFolder, err.Error())
+		log.Errorf("Mkdir %s impossible : %s", absolutePath, err.Error())
 	}
 
-	dataFileName := fsFolder + FILE_NAME
+	dataFileName := absolutePath + FILE_NAME
 	f, err := os.OpenFile(dataFileName, os.O_RDWR, 0644)
 	defer f.Close()
 
 	if err != nil {
-		log.Errorf("OpenFile DB error : %s", err.Error())
+		log.Warnf("OpenFile DB : %s", err.Error())
 		log.Infof("Try to create the file : %s", dataFileName)
 
 		f, _ = os.Create(dataFileName)
@@ -51,7 +51,7 @@ func (store *MmapKVStore) Open(fsFolder string) {
 
 	} else {
 		log.Infof("Datafile %s detected", dataFileName)
-		meta, err := ioutil.ReadFile(fsFolder + META_FILE_NAME)
+		meta, err := ioutil.ReadFile(absolutePath + META_FILE_NAME)
 
 		if err != nil {
 			log.Errorf("Error while trying to OpenFile Metadata : %s", err.Error())
@@ -73,7 +73,7 @@ func (s *MmapKVStore) Get(k string) string {
 // If the store crashes in an inconsistent way (metadata != data), you need to use the recovery tool (RestoreMETA func)
 //
 func (s *MmapKVStore) Put(k, v string) error {
-	if len(k) + len(v) > 2045 {
+	if len(k)+len(v) > 2045 {
 		return errors.New("The record is too long")
 	}
 
@@ -90,19 +90,25 @@ func (s *MmapKVStore) Close() {
 	s.Dir.data.Flush()
 	s.Dir.data.Unmap()
 	s.Dir.dataFile.Close()
-	metaFile, err := os.OpenFile(s.folder + META_FILE_NAME, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	defer metaFile.Close()
 
+	metaFile, err := os.OpenFile(s.Path+META_FILE_NAME, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	defer metaFile.Close()
 	if err != nil {
 		log.Error(err)
+		err = nil
 	}
-	metaFile.WriteAt(EncodeMeta(s.Dir).Bytes(), 0)
-	log.Info("Store closing : metadata are persisted")
+
+	written, err := metaFile.WriteAt(EncodeMeta(s.Dir).Bytes(), 0)
+	if err != nil {
+		log.Errorf("Metadata not persisted (bytes written %d) : %s", written, err.Error())
+	} else {
+		log.Info("Store closing : metadata are persisted")
+	}
 }
 
 func (s *MmapKVStore) Rm() {
-	os.Remove(s.folder + FILE_NAME)
-	os.Remove(s.folder + META_FILE_NAME)
+	os.Remove(s.Path + FILE_NAME)
+	os.Remove(s.Path + META_FILE_NAME)
 }
 
 func (s *MmapKVStore) RestoreMETA() {
@@ -171,4 +177,8 @@ func (s *MmapKVStore) DumpPage(pageId int) string {
 	start := pageId * 4096
 	end := start + 4096
 	return string(s.Dir.data[start:end])
+}
+
+func (s *MmapKVStore) Meta() *Directory {
+	return s.Dir
 }

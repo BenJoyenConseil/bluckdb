@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/valyala/fasthttp"
-	"github.com/kataras/iris"
+	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 	"github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
-	"net/http"
+	"github.com/kataras/iris"
 	"github.com/labstack/gommon/log"
-	"strconv"
+	"github.com/valyala/fasthttp"
+	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -21,20 +23,24 @@ type record struct {
 }
 
 const (
-	logHeader  = "${time_rfc3339}\t[BluckServer]\t${level}\t"
-	logPrefix  = `${time_rfc3339}\t${level}\t${prefix}\t${short_file}\t${line}`
+	logHeader = "${time_rfc3339}\t[BluckServer]\t${level}\t"
+	logPrefix = `${time_rfc3339}\t${level}\t${prefix}\t${short_file}\t${line}`
+	v1Path    = "/v1"
+	dataPath  = "/v1/data"
+	metaPath  = "/v1/meta"
+	debugPath = "/v1/debug"
 )
 
 func main() {
+	log.SetLevel(log.DEBUG)
+
 	log.EnableColor()
 	log.SetHeader(logHeader)
 	log.SetPrefix(logPrefix)
 
-	store := &mmap.MmapKVStore{}
-	store.Open()
-	defer store.Close()
-
-
+	server := &server{
+		stores: make(map[string]bluckstore.KVStore),
+	}
 
 	go func() {
 		sigchan := make(chan os.Signal, 10)
@@ -42,23 +48,29 @@ func main() {
 		<-sigchan
 		log.Error("Program killed !")
 
-		store.Close()
+		server.close()
 
 		os.Exit(0)
 	}()
 
 	log.Info("Launch the server to listen on port 2233...")
 	log.Info("Press ^Ĉ to exit")
-	err := fasthttp.ListenAndServe(":2233", IrisHandler(store))
+
+	err := fasthttp.ListenAndServe(":2233", IrisHandler(server))
 	if err != nil {
 		log.Infof("Error occured while trying to run http server : %s", err.Error())
 	}
 }
 
-func IrisHandler(store *mmap.MmapKVStore) fasthttp.RequestHandler {
+func IrisHandler(server *server) fasthttp.RequestHandler {
 	api := iris.New()
 
-	api.Get("/", func(ctx *iris.Context) {
+	apiV1 := api.Party(v1Path)
+
+	apiV1.Get("/data/*randomName", func(ctx *iris.Context) {
+		storePath := extractDynamicPath(dataPath, ctx.PathString())
+		store := server.getStore(storePath)
+
 		key := ctx.URLParam(idParam)
 		r := &record{
 			Key: key,
@@ -68,7 +80,9 @@ func IrisHandler(store *mmap.MmapKVStore) fasthttp.RequestHandler {
 		ctx.JSON(http.StatusOK, r)
 	})
 
-	api.Put("/", func(ctx *iris.Context) {
+	apiV1.Put("/data/*randomName", func(ctx *iris.Context) {
+		storePath := extractDynamicPath(dataPath, ctx.PathString())
+		store := server.getStore(storePath)
 		key := ctx.URLParam(idParam)
 		err := store.Put(key, string(ctx.PostBody()))
 
@@ -82,11 +96,15 @@ func IrisHandler(store *mmap.MmapKVStore) fasthttp.RequestHandler {
 		ctx.SetStatusCode(http.StatusOK)
 	})
 
-	api.Get("/meta", func(ctx *iris.Context) {
-		ctx.JSON(http.StatusOK, store.Dir)
+	apiV1.Get("/meta/*randomName", func(ctx *iris.Context) {
+		storePath := extractDynamicPath(metaPath, ctx.PathString())
+		store := server.getStore(storePath)
+		ctx.JSON(http.StatusOK, store.Meta())
 	})
 
-	api.Get("/debug", func(ctx *iris.Context) {
+	apiV1.Get("/debug/*randomName", func(ctx *iris.Context) {
+		storePath := extractDynamicPath(debugPath, ctx.PathString())
+		store := server.getStore(storePath)
 		pageId, _ := strconv.Atoi(ctx.Param("page_id"))
 		ctx.WriteString(store.DumpPage(pageId))
 	})
@@ -97,4 +115,28 @@ func IrisHandler(store *mmap.MmapKVStore) fasthttp.RequestHandler {
 
 	api.Build()
 	return api.Router
+}
+
+func extractDynamicPath(fixedPath string, fullPath string) string {
+	return strings.TrimPrefix(fullPath, fixedPath)
+}
+
+type server struct {
+	stores map[string]bluckstore.KVStore
+}
+
+func (server *server) getStore(path string) bluckstore.KVStore {
+	if server.stores[path] == nil {
+		s := &mmap.MmapKVStore{}
+		s.Open(path)
+		log.Debugf("Open %s", path)
+		server.stores[path] = s
+	}
+	return server.stores[path]
+}
+
+func (server *server) close() {
+	for _, store := range server.stores {
+		store.Close()
+	}
 }

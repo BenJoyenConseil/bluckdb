@@ -375,7 +375,6 @@ func TestDirectory_String(t *testing.T) {
 	assert.Equal(t, "{\"table\":[0,1,0,1],\"globalDepth\":1,\"LastPageId\":1}\n", result.String())
 }
 
-
 /*
 func TestDirectory_Gc(t *testing.T) {
 	// Given

@@ -3,12 +3,12 @@ package mmap
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/BenJoyenConseil/bluckdb/util"
 	"github.com/edsrzf/mmap-go"
+	"github.com/labstack/gommon/log"
 	"os"
 	"syscall"
-	"github.com/labstack/gommon/log"
-	"fmt"
 )
 
 type Directory struct {
@@ -26,16 +26,15 @@ func (dir *Directory) extendibleHash(k util.Hashable) int {
 func (dir *Directory) getPage(k string) (Page, int, error) {
 	hash := dir.extendibleHash(util.Key(k))
 
-	if hash > len(dir.Table) -1 {
+	if hash > len(dir.Table)-1 {
 		return nil, -1, fmt.Errorf("hash (%d) out of the Table array %d", hash, len(dir.Table))
 	}
-
 
 	id := dir.Table[hash]
 	offset := id * PAGE_SIZE
 
-	if offset + PAGE_SIZE > len(dir.data) {
-		return nil, -1, fmt.Errorf("offset (%d) out of the data array %d", offset + PAGE_SIZE, len(dir.data))
+	if offset+PAGE_SIZE > len(dir.data) {
+		return nil, -1, fmt.Errorf("offset (%d) out of the data array %d", offset+PAGE_SIZE, len(dir.data))
 	}
 	return Page(dir.data[offset : offset+PAGE_SIZE]), id, nil
 }
@@ -129,6 +128,7 @@ func (dir *Directory) put(key, value string) {
 			p2.setLd(page.ld() + 1)
 
 			if id2*PAGE_SIZE >= len(dir.data) {
+				log.Debugf("dir.data is to small : increase ! id2=%d, id2*PageSize=%d, lenDirData=%d", id2, id2*PAGE_SIZE, len(dir.data))
 				dir.increaseSize()
 			}
 			copy(dir.data[id1*PAGE_SIZE:id1*PAGE_SIZE+PAGE_SIZE], p1)
