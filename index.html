@@ -22,7 +22,10 @@
       <h1>
 <a id="bluckdb" class="anchor" href="#bluckdb" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Bluckdb</h1>
 
-<p><a href="https://travis-ci.org/BenJoyenConseil/bluckdb"><img src="https://travis-ci.org/BenJoyenConseil/bluckdb.svg?branch=master" alt="Build Status"></a> <a href="https://waffle.io/BenJoyenConseil/bluckdb"><img src="https://badge.waffle.io/BenJoyenConseil/bluckdb.png?label=ready&amp;title=Ready" alt="Stories in Ready"></a> <a href="https://goreportcard.com/report/github.com/BenJoyenConseil/bluckdb"><img src="https://goreportcard.com/badge/github.com/BenJoyenConseil/bluckdb" alt="Go Report Card"></a> <a href="https://godoc.org/github.com/BenJoyenConseil/bluckdb"><img src="https://godoc.org/github.com/BenJoyenConseil/bluckdb?status.svg" alt="GoDoc"></a></p>
+<ul>
+<li><a href="https://waffle.io/BenJoyenConseil/bluckdb">Backlog</a></li>
+<li><a href="https://godoc.org/github.com/BenJoyenConseil/bluckdb">Documentation</a></li>
+</ul>
 
 <p>It is a Key/Value store that implements bucketing based on <a href="https://en.wikipedia.org/wiki/Extendible_hashing">extendible hashing</a></p>
 
@@ -37,13 +40,13 @@ curl -XGET http://hostname:2233/debug?page_id=&lt;id_of_the_page_to_display&gt;
 </code></pre>
 
 <h2>
-<a id="the-goal" class="anchor" href="#the-goal" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>the goal</h2>
+<a id="the-goal" class="anchor" href="#the-goal" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The goal</h2>
 
 <p>The goal of this project is to explore and to reinvent the wheel of well known, state of the art, algorithms and data structures.
 For experimental and learning purpose only, not production ready.</p>
 
 <h2>
-<a id="design" class="anchor" href="#design" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>design</h2>
+<a id="design" class="anchor" href="#design" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Design</h2>
 
 <p>A Directory is a table of buckets called "Page". </p>
 
@@ -87,7 +90,7 @@ type ByteRecord []byte
 <pre><code>go run server.go
 </code></pre>
 
-<p>It runs an httpserver with an instance of MmapKVStore which opens/creates the datafile on the /tmp/bluck.data path. </p>
+<p>It runs an httpserver with an instance of MmapKVStore which opens/creates the datafile on the <code>/tmp/bluck.data</code> path. </p>
 
 <p>Note : the path will change in the futur.</p>
 
