@@ -11,46 +11,49 @@ import (
 	"github.com/edsrzf/mmap-go"
 )
 
-func TestStorePut_shouldReOpen_UsingMeta(t *testing.T) {
+func TestStoreOpen_shouldReOpen_UsingMeta(t *testing.T) {
 	// Given
-	os.Remove(DB_DIRECTORY + FILE_NAME)
-	os.Remove(DB_DIRECTORY + META_FILE_NAME)
+	os.Remove(DB_DEFAULT_FOLDER + FILE_NAME)
+	os.Remove(DB_DEFAULT_FOLDER + META_FILE_NAME)
 	store := MmapKVStore{}
-	store.Open()
+	store.Open(DB_DEFAULT_FOLDER)
 	store.Put("KEY", "VALUE")
 	store.Close()
 
 	// When
-	store.Open()
+	store.Open(DB_DEFAULT_FOLDER)
 
 	// Then
 	assert.Equal(t, PAGE_SIZE, len(store.Dir.data))
-	assert.Equal(t, DB_DIRECTORY+FILE_NAME, store.Dir.dataFile.Name())
+	assert.Equal(t, DB_DEFAULT_FOLDER +FILE_NAME, store.Dir.dataFile.Name())
 	assert.Equal(t, []int{0}, store.Dir.Table)
 	assert.Equal(t, 0, int(store.Dir.Gd))
 	assert.Equal(t, "KEYVALUE", string(store.Dir.data[0:8]))
 	store.Close()
 }
 
-func TestMmapKVStore_Close_ShouldWriteMetadata(t *testing.T) {
+func TestMmapKVStore_Close_ShouldWriteMetadata_UsingTheStoreFolderAttribute(t *testing.T) {
 	// Given
 	store := &MmapKVStore{
 		Dir: &Directory{
 			Gd:         2,
 			LastPageId: 4,
 		},
+		folder: "/tmp/bluckdb/exotic/path/",
 	}
 
 	// When
 	store.Close()
 
 	// Then
-	f, err := os.Open(DB_DIRECTORY + META_FILE_NAME)
+	f, err := os.Open(store.folder + META_FILE_NAME)
 	var meta []byte = make([]byte, 100)
 	f.Read(meta)
 	assert.NotNil(t, f)
 	assert.Nil(t, err)
 	assert.NotNil(t, meta)
+	assert.Nil(t, os.Remove(store.folder + "bluck.meta"))
+	os.RemoveAll("/tmp/bluckdb")
 }
 
 func TestDecodeMeta(t *testing.T) {
@@ -109,20 +112,23 @@ func TestMmapKVStore_RestoreMETA_shouldReOpen_UsingFileStatToBuildMeta(t *testin
 	//store.Close()
 }
 
-func TestMmapKVStore_Open_shouldCreateNewFileWhenNotExisting(t *testing.T) {
+func TestMmapKVStore_Open_shouldCreateNewFileWhenNotExisting_UsingFSFolder(t *testing.T) {
 	// Given
-	os.Remove(DB_DIRECTORY + FILE_NAME)
+	fsFolder := "/tmp/bluckdb/exotic/path/"
+	os.RemoveAll(fsFolder)
 	store := &MmapKVStore{}
 
 	// When
-	store.Open()
+	store.Open(fsFolder)
 
 	// Then
 	assert.Equal(t, PAGE_SIZE, len(store.Dir.data))
 	assert.Equal(t, []int{0}, store.Dir.Table)
 	assert.Equal(t, 0, int(store.Dir.Gd))
 	assert.Equal(t, 0, store.Dir.LastPageId)
+	assert.Nil(t, os.Remove(fsFolder + "bluck.data"))
 	store.Close()
+	os.RemoveAll("/tmp/bluckdb")
 }
 
 func TestNextPowerOfTwoNom(t *testing.T) {
@@ -190,7 +196,7 @@ func TestMmapKVStore_Put_WhenRecordPayloadIsToBig(t *testing.T) {
 func BenchmarkMmapPut(b *testing.B) {
 	store := &MmapKVStore{}
 	store.Rm()
-	store.Open()
+	store.Open(DB_DEFAULT_FOLDER)
 	defer store.Close()
 
 	b.ResetTimer()
@@ -203,7 +209,7 @@ func BenchmarkMmapPut(b *testing.B) {
 func BenchmarkMmapRangePut(b *testing.B) {
 	store := &MmapKVStore{}
 	store.Rm()
-	store.Open()
+	store.Open(DB_DEFAULT_FOLDER)
 	defer store.Close()
 
 	b.ResetTimer()
@@ -219,8 +225,8 @@ func BenchmarkMmapRangePut(b *testing.B) {
 func setup() {
 	store := &MmapKVStore{}
 	store.Rm()
-	store.Open()
-	size := 1000000
+	store.Open(DB_DEFAULT_FOLDER)
+	size := 10000
 	for i := 0; i < size; i++ {
 		store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
 	}
@@ -228,12 +234,14 @@ func setup() {
 }
 
 func BenchmarkMmapGet(b *testing.B) {
+	b.StopTimer()
 	setup()
 	store := &MmapKVStore{}
-	store.Open()
+	store.Open(DB_DEFAULT_FOLDER)
 	defer store.Close()
 
 	b.ResetTimer()
+	b.StartTimer()
 	for n := 0; n < b.N; n++ {
 		store.Get(strconv.Itoa(rand.Intn(1000000 - 1)))
 	}

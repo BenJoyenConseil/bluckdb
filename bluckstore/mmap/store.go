@@ -11,21 +11,28 @@ import (
 
 type MmapKVStore struct {
 	Dir *Directory
+	folder string
 }
 
 const (
 	FILE_NAME      = "bluck.data"
 	META_FILE_NAME = "bluck.meta"
-	DB_DIRECTORY   = "/tmp/"
+	DB_DEFAULT_FOLDER = "/tmp/"
 )
 
 //
 // Open create the datafile and the metadata file if they do not exist.
 // Else if they exist, it loads from the disk and mmap the datafile.
 //
-func (store *MmapKVStore) Open() {
+func (store *MmapKVStore) Open(fsFolder string) {
 
-	dataFileName := DB_DIRECTORY + FILE_NAME
+	store.folder = fsFolder
+	err := os.MkdirAll(store.folder, 0777)
+	if err != nil {
+		log.Errorf("Mkdir %s impossible : %s", fsFolder, err.Error())
+	}
+
+	dataFileName := fsFolder + FILE_NAME
 	f, err := os.OpenFile(dataFileName, os.O_RDWR, 0644)
 	defer f.Close()
 
@@ -39,9 +46,12 @@ func (store *MmapKVStore) Open() {
 			Table: make([]int, 1),
 		}
 		f.Write(make([]byte, PAGE_SIZE))
+
+		// TODO : flush metadata
+
 	} else {
 		log.Infof("Datafile %s detected", dataFileName)
-		meta, err := ioutil.ReadFile(DB_DIRECTORY + META_FILE_NAME)
+		meta, err := ioutil.ReadFile(fsFolder + META_FILE_NAME)
 
 		if err != nil {
 			log.Errorf("Error while trying to OpenFile Metadata : %s", err.Error())
@@ -80,7 +90,7 @@ func (s *MmapKVStore) Close() {
 	s.Dir.data.Flush()
 	s.Dir.data.Unmap()
 	s.Dir.dataFile.Close()
-	metaFile, err := os.OpenFile(DB_DIRECTORY+META_FILE_NAME, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	metaFile, err := os.OpenFile(s.folder + META_FILE_NAME, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	defer metaFile.Close()
 
 	if err != nil {
@@ -91,8 +101,8 @@ func (s *MmapKVStore) Close() {
 }
 
 func (s *MmapKVStore) Rm() {
-	os.Remove(DB_DIRECTORY + FILE_NAME)
-	os.Remove(DB_DIRECTORY + META_FILE_NAME)
+	os.Remove(s.folder + FILE_NAME)
+	os.Remove(s.folder + META_FILE_NAME)
 }
 
 func (s *MmapKVStore) RestoreMETA() {
