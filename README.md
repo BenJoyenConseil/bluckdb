@@ -9,11 +9,18 @@ The ``server.go`` file is a simple http server that answers on the 2233 port.
 
 There are 3 endpoints :
 
-    curl -XGET http://hostname:2233/?id=<key>
-    curl -XPUT -d 'value' http://hostname:2233/?id=<key>
-    curl -XGET http://hostname:2233/meta
-    curl -XGET http://hostname:2233/debug?page_id=<id_of_the_page_to_display>
+    curl -XGET http://hostname:2233/v1/data/path/to/fs/?id=<key>
+    curl -XPUT -d 'value' http://hostname:2233/v1/data/path/to/fs/?id=<key>
+    curl -XGET http://hostname:2233/v1/meta/path/to/fs/
+    curl -XGET http://hostname:2233/v1/debug/path/to/fs/?page_id=<id_of_the_page_to_display>
 
+
++ **/v1** is the version number of the API
++ **/path/to/fs/** is a filesystem absolute path to a folder (existing or not, it will create if not)
++ GET **/data** ```/path/to/fs/?id=key``` is the url to get the value of the specified key. It returns a JSON
++ PUT **/data** ```/path/to/fs/?id=key``` is the url to put the value of the specified key. It returns StatusOk if it is inserted
++ GET **/meta** ```/path/to/fs/``` is the url to print metadata of the table. It returns a JSON formatted response
++ PUT **/debug** ```/path/to/fs/?id_page=key``` is the url to print the dump of a specific page
 
 ## the goal
 
@@ -57,9 +64,7 @@ If you run a go program for the first time, do not forget to setup your GOPATH :
 
     go run server.go
 
-It runs an httpserver with an instance of MmapKVStore which opens/creates the datafile on the /tmp/bluck.data path. 
-
-Note : the path will change in the futur.
+It runs an httpserver with an instance of MmapKVStore
 
 ## Benchmarks
     
