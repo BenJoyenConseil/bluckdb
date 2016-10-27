@@ -64,7 +64,6 @@ func (dir *Directory) increaseSize() {
 
 func (dir *Directory) split(page Page) (p1, p2 Page) {
 
-	lookup := make(map[string]bool)
 	p1 = make([]byte, PAGE_SIZE)
 	p2 = make([]byte, PAGE_SIZE)
 
@@ -74,12 +73,6 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 
 		r := it.Next()
 		k := string(r.key())
-		if _, ok := lookup[k]; ok {
-			// this record is skipped because a younger version exists, garbage collection of older version
-			continue
-		} else {
-			lookup[k] = true
-		}
 
 		h := util.Key(k).Hash() & ((1 << dir.Gd) - 1)
 
@@ -127,8 +120,14 @@ func (dir *Directory) put(key, value string) {
 			dir.expand()
 		}
 		if uint(page.ld()) < dir.Gd {
-
-			p1, p2 := dir.split(page)
+			cleaned := page.Gc()
+			copy(dir.data[id*PAGE_SIZE:id*PAGE_SIZE+PAGE_SIZE], cleaned)
+			if err2 := cleaned.Put(key, value); err2 == nil {
+				log.Debugf("Yavait de la place")
+				return
+			}
+			log.Debugf("C'est quand même blindé")
+			p1, p2 := dir.split(cleaned)
 
 			id1, id2 := dir.replace(id, uint(page.ld()))
 

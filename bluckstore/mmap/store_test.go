@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"github.com/labstack/gommon/log"
 )
 
 func TestStoreOpen_shouldReOpen_UsingMeta(t *testing.T) {
@@ -191,9 +192,10 @@ func TestMmapKVStore_Put_WhenRecordPayloadIsToBig(t *testing.T) {
 }
 
 func BenchmarkMmapPut(b *testing.B) {
+	log.SetLevel(log.OFF)
 	store := &MmapKVStore{}
 	store.Rm()
-	store.Open(DB_DEFAULT_FOLDER)
+	store.Open("/tmp/bluckdb/bench/")
 	defer store.Close()
 
 	b.ResetTimer()
@@ -204,9 +206,10 @@ func BenchmarkMmapPut(b *testing.B) {
 }
 
 func BenchmarkMmapRangePut(b *testing.B) {
+	log.SetLevel(log.OFF)
 	store := &MmapKVStore{}
 	store.Rm()
-	store.Open(DB_DEFAULT_FOLDER)
+	store.Open("/tmp/bluckdb/bench/")
 	defer store.Close()
 
 	b.ResetTimer()
@@ -222,7 +225,7 @@ func BenchmarkMmapRangePut(b *testing.B) {
 func setup() {
 	store := &MmapKVStore{}
 	store.Rm()
-	store.Open(DB_DEFAULT_FOLDER)
+	store.Open("/tmp/bluckdb/bench/")
 	size := 10000
 	for i := 0; i < size; i++ {
 		store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")
@@ -231,10 +234,11 @@ func setup() {
 }
 
 func BenchmarkMmapGet(b *testing.B) {
+	log.SetLevel(log.OFF)
 	b.StopTimer()
 	setup()
 	store := &MmapKVStore{}
-	store.Open(DB_DEFAULT_FOLDER)
+	store.Open("/tmp/bluckdb/bench/")
 	defer store.Close()
 
 	b.ResetTimer()

@@ -174,7 +174,7 @@ func TestDirectory_Split(t *testing.T) {
 	assert.Equal(t, 21, p2.Use())
 }
 
-func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
+func TestDirectory_SplitPlusGc_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
 	// Given
 	d := &Directory{
 		Gd: 1,
@@ -185,6 +185,7 @@ func TestDirectory_Split_ShouldSkipRecordWhenHasBeenAlreadyRead(t *testing.T) {
 	page.Put("key0", "value updated")
 
 	// When
+	page = page.Gc()
 	p1, p2 := d.split(page)
 
 	// Then
@@ -252,28 +253,29 @@ func TestDirectory_Put(t *testing.T) {
 
 func TestDirectory_Put_ShouldIncreaseSize_WhenFileIsFull(t *testing.T) {
 	// Given
-	fPath := "/tmp/test.t"
+	fPath := "/tmp/test.db"
 	os.Remove(fPath)
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	defer f.Close()
-	f.Write(make([]byte, PAGE_SIZE*4))
+	f.Write(make([]byte, PAGE_SIZE))
 	dir := &Directory{
-		dataFile:   f,
-		data:       mmap.MMap(make([]byte, PAGE_SIZE*4)),
-		LastPageId: 3,
-		Table:      []int{0, 2, 1, 3},
+		dataFile: f,
+		Gd:       0,
+		Table:    make([]int, 1),
 	}
+	dir.Table[0] = 0
+	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
+	defer dir.data.Unmap()
 
 	var page Page = Page(dir.data[0:PAGE_SIZE])
-	binary.LittleEndian.PutUint16(page[PAGE_USE_OFFSET:], uint16(PAGE_LOCAL_DEPTH_OFFSET))
+	fillPage(page, 182) // set Page to 4076
 
 	// When
-	dir.put("123", "Yolo !")
+	dir.put("123", "Yolo1234 !")
 
 	// Then
 	stats, _ := dir.dataFile.Stat()
-	assert.Equal(t, int64(PAGE_SIZE*8), stats.Size())
-	assert.Equal(t, PAGE_SIZE*8, len(dir.data))
+	assert.Equal(t, int64(PAGE_SIZE*2), stats.Size())
+	assert.Equal(t, PAGE_SIZE*2, len(dir.data))
 	os.Remove(fPath)
 }
 
@@ -348,7 +350,7 @@ func TestDirectory_Put_SameKey_ALotOfTime(t *testing.T) {
 	defer dir.data.Unmap()
 
 	// When
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 10000; i++ {
 
 		dir.put("key", "Yolo ! "+strconv.Itoa(i))
 	}
@@ -356,7 +358,7 @@ func TestDirectory_Put_SameKey_ALotOfTime(t *testing.T) {
 	// Then BOUM !!!
 	assert.Equal(t, "Yolo ! 9999", dir.get("key"))
 	assert.Equal(t, 2, len(dir.Table))
-	assert.Equal(t, 8192, len(dir.data))
+	assert.Equal(t, 4096, len(dir.data))
 	os.Remove(fPath)
 }
 
@@ -382,37 +384,3 @@ func TestDirectory_String(t *testing.T) {
 	// Then BOUM !!!
 	assert.Equal(t, "{\"table\":[0,1,0,1],\"globalDepth\":1,\"LastPageId\":1}\n", result.String())
 }
-
-/*
-func TestDirectory_Gc(t *testing.T) {
-	// Given
-	fPath := "/tmp/test.db"
-	metaFPath := "/tmp/metaTest.db"
-	os.Remove(fPath)
-	os.Remove(metaFPath)
-	f, _ := os.OpenFile(fPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
-	metaF, _ := os.OpenFile(metaFPath, os.O_RDWR | os.O_CREATE | os.O_TRUNC, 0644)
-	defer f.Close()
-	defer metaF.Close()
-	f.Write(make([]byte, PAGE_SIZE))
-	dir := &Directory{
-		dataFile: f,
-		Gd: 0,
-		Table: make([]int, 1),
-		metaFile: metaF,
-	}
-	dir.Table[0] = 0
-	dir.data, _ = mmap.Map(dir.dataFile, mmap.RDWR, 0)
-	defer dir.data.Unmap()
-
-	// When
-	for i := 0; i < 1000; i++ {
-
-		dir.put("key" + strconv.Itoa(rand.Intn(20)), "Yolo ! " + strconv.Itoa(i))
-	}
-
-	// Then BOUM !!!
-	assert.Equal(t, 1, len(dir.Table))
-	assert.Equal(t, 0, dir.Gd)
-	assert.Equal(t, PAGE_SIZE, len(dir.data))
-}*/

@@ -68,7 +68,7 @@ func TestIrisHandler_GET_META(t *testing.T) {
 		    }`
 
 	// When
-	response := tester.GET("/v1/meta/tmp/bluckdb/").Expect()
+	response := tester.GET("/v1/meta/tmp/bluckdb/meta/").Expect()
 
 	// Then
 	response.Status(http.StatusOK).JSON().Schema(schema)
@@ -81,7 +81,7 @@ func TestIrisHandler_GET(t *testing.T) {
 	tester := irisTester(t)
 
 	// When
-	response := tester.GET("/v1/data/tmp/bluckdb/").WithQuery("id", "123").Expect()
+	response := tester.GET("/v1/data/tmp/bluckdb/get/").WithQuery("id", "123").Expect()
 
 	// Then
 	response.Status(http.StatusOK).JSON().Object().ContainsKey("key").ContainsKey("val")
@@ -93,7 +93,7 @@ func TestIrisHandler_PUT(t *testing.T) {
 	tester := irisTester(t)
 
 	// When
-	response := tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "123").WithText("yop%20yop%20yop").Expect()
+	response := tester.PUT("/v1/data/tmp/bluckdb/put/").WithQuery("id", "123").WithText("yop%20yop%20yop").Expect()
 
 	// Then
 	fmt.Println(response.Text())
@@ -108,10 +108,10 @@ func TestIrisHandler_PUT_RaceCondition(t *testing.T) {
 
 	// When
 	for i := 0; i < 100; i++ {
-		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
-		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
-		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
-		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+		go tester.PUT("/v1/data/tmp/bluckdb/race/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+		go tester.PUT("/v1/data/tmp/bluckdb/race/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+		go tester.PUT("/v1/data/tmp/bluckdb/race/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+		go tester.PUT("/v1/data/tmp/bluckdb/race/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
 	}
 
 	// Then
@@ -120,11 +120,12 @@ func TestIrisHandler_PUT_RaceCondition(t *testing.T) {
 
 func TestIrisHandler_GET_DEBUG(t *testing.T) {
 	rmDBFiles()
+
 	// Given
 	tester := irisTester(t)
 
 	// When
-	response := tester.GET("/v1/debug/tmp/bluckdb/").WithQuery("page_id", "0").Expect()
+	response := tester.GET("/v1/debug/tmp/bluckdb/debug/").WithQuery("page_id", "0").Expect()
 
 	// Then
 	fmt.Println(response.Text())

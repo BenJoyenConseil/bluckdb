@@ -44,7 +44,7 @@ func main() {
 
 	go func() {
 		sigchan := make(chan os.Signal, 10)
-		signal.Notify(sigchan, os.Interrupt)
+		signal.Notify(sigchan, os.Interrupt, os.Kill)
 		<-sigchan
 		log.Error("Program killed !")
 
@@ -152,7 +152,7 @@ func (s *LockableStore) Unlock() { s.lock.Unlock()}
 func (server *server) getStore(path string) LockableKVStore {
 	server.lock.Lock()
 	if server.stores[path] == nil {
-		log.Infof("Store %s not existing Creating a instance", path)
+		log.Infof("First time using the store instance in path %s", path)
 		s := &LockableStore{
 			store: &mmap.MmapKVStore{},
 			lock: &sync.RWMutex{},

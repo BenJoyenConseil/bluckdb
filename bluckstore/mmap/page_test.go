@@ -144,6 +144,26 @@ func TestPut_(t *testing.T) {
 	assert.Equal(t, "Yolo updated !", rVal)
 }
 
+func TestPage_Gc(t *testing.T) {
+	// Given
+	p := Page(make([]byte, PAGE_SIZE))
+	copy(p[0:], "keyyolololo!")
+	binary.LittleEndian.PutUint16(p[12:], uint16(9))
+	binary.LittleEndian.PutUint16(p[14:], uint16(3))
+	copy(p[16:], "keyyalalala!")
+	binary.LittleEndian.PutUint16(p[28:], uint16(9))
+	binary.LittleEndian.PutUint16(p[30:], uint16(3))
+
+	binary.LittleEndian.PutUint16(p[4094:], uint16(32))
+
+	// When
+	result := p.Gc()
+
+	// Then
+	assert.NotContains(t, string(result), "keyyolololo!")
+	assert.Contains(t, string(result), "keyyalalala!")
+}
+
 func TestPut_shouldReturnAnErrorWhenRestOfPageIsLowerThanRecordPayload(t *testing.T) {
 	// Given
 	var p Page = make([]byte, PAGE_SIZE)

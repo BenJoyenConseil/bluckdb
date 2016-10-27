@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/labstack/gommon/log"
 )
 
 //
@@ -87,4 +88,26 @@ func (p Page) Put(k, v string) error {
 	}
 
 	return errors.New("The page is full.")
+}
+
+func (p Page)  Gc() Page {
+	tmp := Page(make([]byte, PAGE_SIZE))
+	tmp.setLd(p.ld())
+	lookup := make(map[string]bool)
+	it := &PageIterator{p: p, current: p.Use()}
+
+	for it.HasNext() {
+
+		r := it.Next()
+		k := string(r.key())
+		if _, ok := lookup[k]; ok {
+			// this record is skipped because a younger version exists, garbage collection of older version
+			continue
+		} else {
+			lookup[k] = true
+			tmp.Put(k, string(r.val()))
+		}
+	}
+	log.Debugf("p.rest=%d tmp.rest=%d", p.rest(), tmp.rest())
+	return tmp
 }
