@@ -55,6 +55,7 @@ func (store *MmapKVStore) Open(absolutePath string) {
 
 		if err != nil {
 			log.Errorf("Error while trying to OpenFile Metadata : %s", err.Error())
+			panic(err)
 		} else {
 			store.Dir = DecodeMeta(bytes.NewBuffer(meta))
 		}

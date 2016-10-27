@@ -10,7 +10,13 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"github.com/labstack/gommon/log"
 )
+
+func init(){
+
+	log.SetLevel(log.DEBUG)
+}
 
 func TestDirectory_ExtendibleHash(t *testing.T) {
 	// Given
@@ -201,7 +207,7 @@ func TestDirectory_NextPageId(t *testing.T) {
 	assert.Equal(t, 29921, result)
 }
 
-func TestDirectoryReplace(t *testing.T) {
+func TestDirectory_Replace(t *testing.T) {
 	// Given
 	dir := &Directory{
 		Table:      []int{0, 1, 3, 2, 0, 1, 3, 2},
@@ -259,7 +265,7 @@ func TestDirectory_Put_ShouldIncreaseSize_WhenFileIsFull(t *testing.T) {
 	}
 
 	var page Page = Page(dir.data[0:PAGE_SIZE])
-	binary.LittleEndian.PutUint16(page[PAGE_USE_OFFSET:], uint16(PAGE_USE_OFFSET))
+	binary.LittleEndian.PutUint16(page[PAGE_USE_OFFSET:], uint16(PAGE_LOCAL_DEPTH_OFFSET))
 
 	// When
 	dir.put("123", "Yolo !")
@@ -326,7 +332,7 @@ func TestDirectory_Put_INT(t *testing.T) {
 	os.Remove(fPath)
 }
 
-func TestDirectory_Put_SameKey(t *testing.T) {
+func TestDirectory_Put_SameKey_ALotOfTime(t *testing.T) {
 	// Given
 	fPath := "/tmp/test.db"
 	f, _ := os.OpenFile(fPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -342,13 +348,15 @@ func TestDirectory_Put_SameKey(t *testing.T) {
 	defer dir.data.Unmap()
 
 	// When
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 1000; i++ {
 
 		dir.put("key", "Yolo ! "+strconv.Itoa(i))
 	}
 
 	// Then BOUM !!!
-	assert.Equal(t, "Yolo ! 4", dir.get("key"))
+	assert.Equal(t, "Yolo ! 9999", dir.get("key"))
+	assert.Equal(t, 2, len(dir.Table))
+	assert.Equal(t, 8192, len(dir.data))
 	os.Remove(fPath)
 }
 

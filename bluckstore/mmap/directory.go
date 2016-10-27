@@ -55,6 +55,7 @@ func (dir *Directory) expand() {
 }
 
 func (dir *Directory) increaseSize() {
+
 	stats, _ := dir.dataFile.Stat()
 	size := stats.Size()
 	dir.dataFile.WriteAt(make([]byte, size), int64(size))
@@ -62,6 +63,7 @@ func (dir *Directory) increaseSize() {
 }
 
 func (dir *Directory) split(page Page) (p1, p2 Page) {
+
 	lookup := make(map[string]bool)
 	p1 = make([]byte, PAGE_SIZE)
 	p2 = make([]byte, PAGE_SIZE)
@@ -69,6 +71,7 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 	it := &PageIterator{p: page, current: page.Use()}
 
 	for it.HasNext() {
+
 		r := it.Next()
 		k := string(r.key())
 		if _, ok := lookup[k]; ok {
@@ -77,6 +80,7 @@ func (dir *Directory) split(page Page) (p1, p2 Page) {
 		} else {
 			lookup[k] = true
 		}
+
 		h := util.Key(k).Hash() & ((1 << dir.Gd) - 1)
 
 		if (h>>uint(page.ld()))&1 == 1 {
@@ -94,10 +98,12 @@ func (dir *Directory) nextPageId() int {
 }
 
 func (dir *Directory) replace(obsoletePageId int, ld uint) (p1Id, p2Id int) {
+
 	p1Id = obsoletePageId
 	p2Id = dir.nextPageId()
 
 	for i := 0; i < len(dir.Table); i++ {
+
 		if obsoletePageId != dir.Table[i] {
 			continue
 		}
@@ -123,7 +129,9 @@ func (dir *Directory) put(key, value string) {
 		if uint(page.ld()) < dir.Gd {
 
 			p1, p2 := dir.split(page)
+
 			id1, id2 := dir.replace(id, uint(page.ld()))
+
 			p1.setLd(page.ld() + 1)
 			p2.setLd(page.ld() + 1)
 
@@ -141,6 +149,7 @@ func (dir *Directory) put(key, value string) {
 }
 
 func (dir *Directory) mmapDataFile() {
+
 	var err error
 	dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR|syscall.MAP_POPULATE, 0644)
 

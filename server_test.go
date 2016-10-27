@@ -5,18 +5,20 @@ import (
 	"testing"
 
 	"fmt"
-	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 	"github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/gavv/httpexpect.v1"
 	"os"
+	"sync"
+	"strconv"
 )
 
 const db_test_path = "/tmp/bluckdb/"
 
 func irisTester(t *testing.T) *httpexpect.Expect {
 	server := &server{
-		stores: make(map[string]bluckstore.KVStore),
+		stores: make(map[string]LockableKVStore),
+		lock: &sync.RWMutex{},
 	}
 	handler := IrisHandler(server)
 	handler.Build()
@@ -99,6 +101,23 @@ func TestIrisHandler_PUT(t *testing.T) {
 	rmDBFiles()
 }
 
+func TestIrisHandler_PUT_RaceCondition(t *testing.T) {
+	rmDBFiles()
+	// Given
+	tester := irisTester(t)
+
+	// When
+	for i := 0; i < 100; i++ {
+		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+		go tester.PUT("/v1/data/tmp/bluckdb/").WithQuery("id", "mykey").WithText("|myvalue->thread n°" + strconv.Itoa(i) + ";").Expect()
+	}
+
+	// Then
+	rmDBFiles()
+}
+
 func TestIrisHandler_GET_DEBUG(t *testing.T) {
 	rmDBFiles()
 	// Given
@@ -129,9 +148,10 @@ func TestServerGetStore_StoreExists(t *testing.T) {
 	// Given
 	store1 := &mockStore{}
 	s := &server{
-		stores: map[string]bluckstore.KVStore{
+		stores: map[string]LockableKVStore{
 			"/bla/bla/bla/": store1,
 		},
+		lock: &sync.RWMutex{},
 	}
 
 	// When
@@ -147,10 +167,11 @@ func TestServerClose(t *testing.T) {
 	store1 := &mockStore{hasCalledClose: false}
 	store2 := &mockStore{hasCalledClose: false}
 	s := &server{
-		stores: map[string]bluckstore.KVStore{
+		stores: map[string]LockableKVStore{
 			"/bla/bla/bla/": store1,
 			"/blu/blu/blu/": store2,
 		},
+		lock: &sync.RWMutex{},
 	}
 
 	// When
@@ -172,11 +193,14 @@ func (s *mockStore) DumpPage(i int) string { return "" }
 func (s *mockStore) Open(p string)         {}
 func (s *mockStore) Close()                { s.hasCalledClose = true }
 func (s *mockStore) Meta() *mmap.Directory { return nil }
+func (s *mockStore) Lock() {}
+func (s *mockStore) Unlock() {}
 
 func TestServerGetStore_StoreDoesNotExist_ShouldCreateAndOpen_WithPath_AndReturnIt(t *testing.T) {
 	// Given
 	s := &server{
-		stores: make(map[string]bluckstore.KVStore),
+		stores: make(map[string]LockableKVStore),
+		lock: &sync.RWMutex{},
 	}
 
 	// When
@@ -184,6 +208,6 @@ func TestServerGetStore_StoreDoesNotExist_ShouldCreateAndOpen_WithPath_AndReturn
 
 	// Then
 	assert.NotNil(t, result)
-	assert.Equal(t, db_test_path, result.(*mmap.MmapKVStore).Path)
+	assert.Equal(t, db_test_path, result.(*LockableStore).store.(*mmap.MmapKVStore).Path)
 	rmDBFiles()
 }
