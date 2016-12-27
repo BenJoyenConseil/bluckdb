@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/gob"
 	"github.com/edsrzf/mmap-go"
+	"github.com/labstack/gommon/log"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
-	"github.com/labstack/gommon/log"
 )
 
 func TestStoreOpen_shouldReOpen_UsingMeta(t *testing.T) {

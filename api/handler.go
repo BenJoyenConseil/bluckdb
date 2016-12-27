@@ -1,10 +1,19 @@
-package main
+package api
 
 import (
 	"github.com/kataras/iris"
+	"net/http"
 	"strconv"
 	"strings"
-	"net/http"
+	"github.com/BenJoyenConseil/bluckdb/bluckstore"
+)
+
+const (
+	v1Path    = "/v1"
+	dataPath  = "/v1/data"
+	metaPath  = "/v1/meta"
+	debugPath = "/v1/debug"
+	idParam = "id"
 )
 
 type RecordToJSON struct {
@@ -12,7 +21,7 @@ type RecordToJSON struct {
 	Val string `json:"val"`
 }
 
-func IrisHandler(server *server) *iris.Framework {
+func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 	api := iris.New()
 
 	apiV1 := api.Party(v1Path)
@@ -20,7 +29,7 @@ func IrisHandler(server *server) *iris.Framework {
 	apiV1.Get("/data/*randomName", func(ctx *iris.Context) {
 
 		storePath := extractDynamicPath(dataPath, ctx.PathString())
-		store := server.getStore(storePath)
+		store := store.GetStore(storePath)
 
 		key := ctx.URLParam(idParam)
 		store.Lock()
@@ -36,7 +45,7 @@ func IrisHandler(server *server) *iris.Framework {
 	apiV1.Put("/data/*randomName", func(ctx *iris.Context) {
 
 		storePath := extractDynamicPath(dataPath, ctx.PathString())
-		store := server.getStore(storePath)
+		store := store.GetStore(storePath)
 		key := ctx.URLParam(idParam)
 
 		store.Lock()
@@ -57,13 +66,13 @@ func IrisHandler(server *server) *iris.Framework {
 	apiV1.Get("/meta/*randomName", func(ctx *iris.Context) {
 
 		storePath := extractDynamicPath(metaPath, ctx.PathString())
-		store := server.getStore(storePath)
+		store := store.GetStore(storePath)
 		ctx.JSON(http.StatusOK, store.Meta())
 	})
 
 	apiV1.Get("/debug/*randomName", func(ctx *iris.Context) {
 		storePath := extractDynamicPath(debugPath, ctx.PathString())
-		store := server.getStore(storePath)
+		store := store.GetStore(storePath)
 		pageId, _ := strconv.Atoi(ctx.Param("page_id"))
 		ctx.WriteString(store.DumpPage(pageId))
 	})

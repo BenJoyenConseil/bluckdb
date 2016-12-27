@@ -1,25 +1,21 @@
-package main
+package api
 
 import (
-	"testing"
-	"strconv"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"sync"
-	"gopkg.in/gavv/httpexpect.v1"
-	"os"
-	"net/http"
 	"github.com/BenJoyenConseil/bluckdb/bluckstore"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/gavv/httpexpect.v1"
+	"net/http"
+	"os"
+	"strconv"
+	"testing"
 )
 
 const db_test_path = "/tmp/bluckdb/"
 
 func irisTester(t *testing.T) *httpexpect.Expect {
-	server := &server{
-		stores: make(map[string]bluckstore.ThreadSafeStore),
-		lock: &sync.RWMutex{},
-	}
-	handler := IrisHandler(server)
+	server := bluckstore.NewMmapMultiStore()
+	handler := AppendIrisHandlers(server)
 	handler.Build()
 
 	return httpexpect.WithConfig(httpexpect.Config{

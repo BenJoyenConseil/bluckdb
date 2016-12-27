@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"github.com/BenJoyenConseil/bluckdb/util"
 	"github.com/edsrzf/mmap-go"
+	"github.com/labstack/gommon/log"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"strconv"
 	"testing"
-	"github.com/labstack/gommon/log"
 )
 
-func init(){
+func init() {
 
 	log.SetLevel(log.DEBUG)
 }

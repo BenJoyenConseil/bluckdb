@@ -90,7 +90,7 @@ func (p Page) Put(k, v string) error {
 	return errors.New("The page is full.")
 }
 
-func (p Page)  Gc() Page {
+func (p Page) Gc() Page {
 	tmp := Page(make([]byte, PAGE_SIZE))
 	tmp.setLd(p.ld())
 	lookup := make(map[string]bool)
