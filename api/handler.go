@@ -1,11 +1,11 @@
 package api
 
 import (
+	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 	"github.com/kataras/iris"
 	"net/http"
 	"strconv"
 	"strings"
-	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 )
 
 const (
@@ -13,7 +13,7 @@ const (
 	dataPath  = "/v1/data"
 	metaPath  = "/v1/meta"
 	debugPath = "/v1/debug"
-	idParam = "id"
+	idParam   = "id"
 )
 
 type RecordToJSON struct {
@@ -24,7 +24,19 @@ type RecordToJSON struct {
 func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 	api := iris.New()
 
+	api.Get("/", func(ctx *iris.Context) {
+
+		ctx.JSON(http.StatusOK, struct{
+			Version string `json:"version"`
+			Message string `json:"message"`
+		}{
+			Version: "v0.1",
+			Message: "You know, for fast persistency :)",
+		})
+	})
+
 	apiV1 := api.Party(v1Path)
+
 
 	apiV1.Get("/data/*randomName", func(ctx *iris.Context) {
 

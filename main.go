@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"github.com/BenJoyenConseil/bluckdb/api"
+	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 	"github.com/kataras/iris"
 	"github.com/labstack/gommon/log"
 	"os"
 	"os/signal"
-	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 )
 
 const (

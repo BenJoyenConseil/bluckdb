@@ -1,11 +1,11 @@
 package bluckstore
 
 import (
-	"testing"
 	"github.com/BenJoyenConseil/bluckdb/bluckstore/mmap"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"sync"
+	"testing"
 )
 
 const db_test_path = "/tmp/bluckdb/"
