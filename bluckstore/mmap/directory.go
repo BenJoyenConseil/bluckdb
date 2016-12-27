@@ -150,6 +150,7 @@ func (dir *Directory) put(key, value string) {
 func (dir *Directory) mmapDataFile() {
 
 	var err error
+	dir.data.Unmap()
 	dir.data, err = mmap.Map(dir.dataFile, mmap.RDWR|syscall.MAP_POPULATE, 0644)
 
 	log.Debugf("mmap data size = %d bytes", len(dir.data))

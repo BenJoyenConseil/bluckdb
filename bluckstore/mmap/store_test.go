@@ -93,21 +93,21 @@ func TestEncodeMeta(t *testing.T) {
 
 func TestMmapKVStore_RestoreMETA_shouldReOpen_UsingFileStatToBuildMeta(t *testing.T) {
 	// Given
-	//os.Remove(DB_DIRECTORY + FILE_NAME)
-	//f, _ := os.OpenFile(DB_DIRECTORY + FILE_NAME, os.O_RDWR|os.O_CREATE, 0644)
-	//f.Write(make([]byte, 12288))
-	//f.Close()
-	//store := &MmapKVStore{}
-	//
-	//// When
-	//store.Open()
-	//
-	//// Then
-	//assert.Equal(t, 12288, len(store.Dir.data))
-	//assert.Equal(t, []int{0, 1, 2, 0}, store.Dir.Table)
-	//assert.Equal(t, 2, int(store.Dir.Gd))
-	//assert.Equal(t, 2, store.Dir.LastPageId)
-	//store.Close()
+	os.Remove(DB_DEFAULT_FOLDER + FILE_NAME)
+	f, _ := os.OpenFile(DB_DEFAULT_FOLDER + FILE_NAME, os.O_RDWR|os.O_CREATE, 0644)
+	f.Write(make([]byte, 16384))
+	f.Close()
+	store := &MmapKVStore{}
+
+	// When
+	store.Open(DB_DEFAULT_FOLDER)
+
+	// Then
+	assert.Equal(t, 16384, len(store.Dir.data))
+	assert.Equal(t, []int{0, 1, 2, 0}, store.Dir.Table)
+	assert.Equal(t, 2, int(store.Dir.Gd))
+	assert.Equal(t, 2, store.Dir.LastPageId)
+	store.Close()
 }
 
 func TestMmapKVStore_Open_shouldCreateNewFileWhenNotExisting_UsingFSFolder(t *testing.T) {
@@ -192,10 +192,11 @@ func TestMmapKVStore_Put_WhenRecordPayloadIsToBig(t *testing.T) {
 }
 
 func BenchmarkMmapPut(b *testing.B) {
+	p := "/tmp/bluckdb/bench/"
 	log.SetLevel(log.OFF)
 	store := &MmapKVStore{}
-	store.Rm()
-	store.Open("/tmp/bluckdb/bench/")
+	store.Rm(p)
+	store.Open(p)
 	defer store.Close()
 
 	b.ResetTimer()
@@ -206,10 +207,11 @@ func BenchmarkMmapPut(b *testing.B) {
 }
 
 func BenchmarkMmapRangePut(b *testing.B) {
+	p := "/tmp/bluckdb/bench/"
 	log.SetLevel(log.OFF)
 	store := &MmapKVStore{}
-	store.Rm()
-	store.Open("/tmp/bluckdb/bench/")
+	store.Rm(p)
+	store.Open(p)
 	defer store.Close()
 
 	b.ResetTimer()
@@ -223,9 +225,10 @@ func BenchmarkMmapRangePut(b *testing.B) {
 }
 
 func setup() {
+	p := "/tmp/bluckdb/bench/"
 	store := &MmapKVStore{}
-	store.Rm()
-	store.Open("/tmp/bluckdb/bench/")
+	store.Rm(p)
+	store.Open(p)
 	size := 10000
 	for i := 0; i < size; i++ {
 		store.Put(strconv.Itoa(i), "mec, elle est où ma caisse ??")

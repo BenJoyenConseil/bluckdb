@@ -107,9 +107,9 @@ func (s *MmapKVStore) Close() {
 	}
 }
 
-func (s *MmapKVStore) Rm() {
-	os.Remove(s.Path + FILE_NAME)
-	os.Remove(s.Path + META_FILE_NAME)
+func (s *MmapKVStore) Rm(absolutePath string) {
+	os.Remove(absolutePath + FILE_NAME)
+	os.Remove(absolutePath + META_FILE_NAME)
 }
 
 func (s *MmapKVStore) RestoreMETA() {
