@@ -91,7 +91,7 @@ func TestEncodeMeta(t *testing.T) {
 	assert.Equal(t, *dir, r)
 }
 
-func TestMmapKVStore_RestoreMETA_shouldReOpen_UsingFileStatToBuildMeta(t *testing.T) {
+/*func TestMmapKVStore_RestoreMETA_shouldReOpen_UsingFileStatToBuildMeta(t *testing.T) {
 	// Given
 	os.Remove(DB_DEFAULT_FOLDER + FILE_NAME)
 	f, _ := os.OpenFile(DB_DEFAULT_FOLDER + FILE_NAME, os.O_RDWR|os.O_CREATE, 0644)
@@ -108,7 +108,7 @@ func TestMmapKVStore_RestoreMETA_shouldReOpen_UsingFileStatToBuildMeta(t *testin
 	assert.Equal(t, 2, int(store.Dir.Gd))
 	assert.Equal(t, 2, store.Dir.LastPageId)
 	store.Close()
-}
+}*/
 
 func TestMmapKVStore_Open_shouldCreateNewFileWhenNotExisting_UsingFSFolder(t *testing.T) {
 	// Given
