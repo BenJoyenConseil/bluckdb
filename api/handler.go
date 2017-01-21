@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"io/ioutil"
 )
 
 const (
@@ -26,7 +27,7 @@ func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 
 	api.Get("/", func(ctx *iris.Context) {
 
-		ctx.JSON(http.StatusOK, struct{
+		ctx.JSON(http.StatusOK, struct {
 			Version string `json:"version"`
 			Message string `json:"message"`
 		}{
@@ -37,10 +38,9 @@ func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 
 	apiV1 := api.Party(v1Path)
 
-
 	apiV1.Get("/data/*randomName", func(ctx *iris.Context) {
 
-		storePath := extractDynamicPath(dataPath, ctx.PathString())
+		storePath := extractDynamicPath(dataPath, ctx.Path())
 		store := store.GetStore(storePath)
 
 		key := ctx.URLParam(idParam)
@@ -56,12 +56,13 @@ func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 
 	apiV1.Put("/data/*randomName", func(ctx *iris.Context) {
 
-		storePath := extractDynamicPath(dataPath, ctx.PathString())
+		storePath := extractDynamicPath(dataPath, ctx.Path())
 		store := store.GetStore(storePath)
 		key := ctx.URLParam(idParam)
 
 		store.Lock()
-		err := store.Put(key, string(ctx.PostBody()))
+		body, _ := ioutil.ReadAll(ctx.Request.Body)
+		err := store.Put(key, string(body))
 		store.Unlock()
 
 		if err != nil {
@@ -77,13 +78,13 @@ func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 
 	apiV1.Get("/meta/*randomName", func(ctx *iris.Context) {
 
-		storePath := extractDynamicPath(metaPath, ctx.PathString())
+		storePath := extractDynamicPath(metaPath, ctx.Path())
 		store := store.GetStore(storePath)
 		ctx.JSON(http.StatusOK, store.Meta())
 	})
 
 	apiV1.Get("/debug/*randomName", func(ctx *iris.Context) {
-		storePath := extractDynamicPath(debugPath, ctx.PathString())
+		storePath := extractDynamicPath(debugPath, ctx.Path())
 		store := store.GetStore(storePath)
 		pageId, _ := strconv.Atoi(ctx.Param("page_id"))
 		ctx.WriteString(store.DumpPage(pageId))

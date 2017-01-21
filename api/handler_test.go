@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"github.com/BenJoyenConseil/bluckdb/bluckstore"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/gavv/httpexpect.v1"
@@ -21,7 +20,7 @@ func irisTester(t *testing.T) *httpexpect.Expect {
 	return httpexpect.WithConfig(httpexpect.Config{
 		BaseURL: "http://localhost:2233",
 		Client: &http.Client{
-			Transport: httpexpect.NewFastBinder(handler.Router),
+			Transport: httpexpect.NewBinder(handler.Router),
 			Jar:       httpexpect.NewJar(),
 		},
 		Reporter: httpexpect.NewAssertReporter(t),
@@ -91,7 +90,6 @@ func TestIrisHandler_PUT(t *testing.T) {
 	response := tester.PUT("/v1/data/tmp/bluckdb/put/").WithQuery("id", "123").WithText("yop%20yop%20yop").Expect()
 
 	// Then
-	fmt.Println(response.Text())
 	response.Status(http.StatusOK)
 	rmDBFiles()
 }
@@ -123,7 +121,6 @@ func TestIrisHandler_GET_DEBUG(t *testing.T) {
 	response := tester.GET("/v1/debug/tmp/bluckdb/debug/").WithQuery("page_id", "0").Expect()
 
 	// Then
-	fmt.Println(response.Text())
 	response.Status(http.StatusOK)
 	rmDBFiles()
 }
