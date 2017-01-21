@@ -30,10 +30,36 @@ For experimental and learning purpose only, not production ready.
 
 ## design
 
-A Directory is a table of buckets called "Page". 
+The datastructure is a persistent hashtable. 
+There is no separation between the index and the data, they are in the same file
+That is the reason why a record cannot be bigger than a bucket currently (no handling for big record)
 
+#### meta directory 
+
+A Directory is a table of buckets called "Page". 
+It is the structure used to know where a bucket points physicaly to the data file 
+
+    dir := &Directory{
+          Table:      []int{0, 1, 3, 2, 0, 1, 3, 2},
+          Gd:         2,
+          LastPageId: 3,
+       	 data: []byte{...},
+    }
+
+The ```Table``` array stores the ids of the pages (i.e pointers). To retrieve a page, the algorithm
+hash(key) and lookups to the ```Table``` what index it points to. Then it does a subset
+of the ```data``` byte slice with ```Table[ hash(key) ] * 4096```, and casts it to a Page structure.
+
+When a new Page is required because there is no free space, ```LastPageId + 1``` is use to be the next 
+pointer filled in the ```Table``` array to point to the new Page (so it points at the end of the File => ```(LastPageId + 1) * 4096```).
+
+#### page layout
 A Page is a byte array of 4096 bytes length, append only. 
 Trailer : It stores actual usage of the Page at 4094 bytes (unint16), and local depth at 4092 bytes (unint16)
+
+| Record 1 | Record 2 | Record 3 | Record 1 v2 | **LOCAL_DEPTH** | **PAGE_USE** |  
+
+#### record layout
 
 A Record is a byte array with a key, a value and the headers :
  
@@ -43,8 +69,13 @@ A Record is a byte array with a key, a value and the headers :
         KeyLen() uint16
         ValLen() uint16
     }
+    
     type ByteRecord []byte
-         
+
+
+| ... | *k* | *e* | *y* | **v** | **a** | **l** | **u** | **e** | **0x5** | **0x0** | *0x3* | *0x0* | ... |
+
+
 Actual public methods :
 
 * put : append the record at the offset given by `Page.use()` value
@@ -74,3 +105,10 @@ It runs an httpserver with an instance of MmapKVStore
     BenchmarkGetNaiveDiskKVStore-4              30          44017416 ns/op   ->  44 ms
     BenchmarkPutHashMap-4                  1000000              1385 ns/op   -> 1,3 µs
     BenchmarkGetHashMap-4                  2000000               711 ns/op   -> 0,7 µs
+
+
+## Projects used by BluckDB
+
+ * [Iris web framework](github.com/kataras/iris)
+ * [Gommon logger](github.com/labstack/gommon/log)
+ * [Mmap-go](github.com/edsrzf/mmap-go)
