@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/BenJoyenConseil/bluckdb/bluckstore"
-	"github.com/kataras/iris"
-	"net/http"
-	"strconv"
-	"strings"
 	"io/ioutil"
+	"strings"
+
+	"github.com/BenJoyenConseil/bluckdb/bluckstore"
+
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
 const (
@@ -22,12 +23,12 @@ type RecordToJSON struct {
 	Val string `json:"val"`
 }
 
-func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
+func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Application {
 	api := iris.New()
 
-	api.Get("/", func(ctx *iris.Context) {
+	api.Get("/", func(ctx context.Context) {
 
-		ctx.JSON(http.StatusOK, struct {
+		ctx.JSON(struct {
 			Version string `json:"version"`
 			Message string `json:"message"`
 		}{
@@ -38,30 +39,32 @@ func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 
 	apiV1 := api.Party(v1Path)
 
-	apiV1.Get("/data/*randomName", func(ctx *iris.Context) {
-
+	apiV1.Get("/data/{randomName:path}", func(ctx context.Context) {
+		println("----------->" + ctx.Path())
 		storePath := extractDynamicPath(dataPath, ctx.Path())
 		store := store.GetStore(storePath)
 
 		key := ctx.URLParam(idParam)
+
 		store.Lock()
-		r := &RecordToJSON{
-			Key: key,
-			Val: store.Get(key),
-		}
+		v := store.Get(key)
 		store.Unlock()
 
-		ctx.JSON(http.StatusOK, r)
+		r := &RecordToJSON{
+			Key: key,
+			Val: v,
+		}
+
+		ctx.JSON(r)
 	})
 
-	apiV1.Put("/data/*randomName", func(ctx *iris.Context) {
-
+	apiV1.Put("/data/{randomName:path}", func(ctx context.Context) {
 		storePath := extractDynamicPath(dataPath, ctx.Path())
 		store := store.GetStore(storePath)
 		key := ctx.URLParam(idParam)
 
 		store.Lock()
-		body, _ := ioutil.ReadAll(ctx.Request.Body)
+		body, _ := ioutil.ReadAll(ctx.Request().Body)
 		err := store.Put(key, string(body))
 		store.Unlock()
 
@@ -70,27 +73,28 @@ func AppendIrisHandlers(store *bluckstore.MultiStore) *iris.Framework {
 				Message string `json:"message"`
 			}
 			msg := &error{Message: err.Error()}
-			ctx.JSON(http.StatusRequestEntityTooLarge, msg)
+			ctx.StatusCode(iris.StatusRequestEntityTooLarge)
+			ctx.JSON(msg)
+			return
 		}
-
-		ctx.SetStatusCode(http.StatusOK)
 	})
 
-	apiV1.Get("/meta/*randomName", func(ctx *iris.Context) {
+	apiV1.Get("/meta/{randomName:path}", func(ctx context.Context) {
 
 		storePath := extractDynamicPath(metaPath, ctx.Path())
 		store := store.GetStore(storePath)
-		ctx.JSON(http.StatusOK, store.Meta())
+		ctx.JSON(store.Meta())
 	})
 
-	apiV1.Get("/debug/*randomName", func(ctx *iris.Context) {
+	apiV1.Get("/debug/{randomName:path}", func(ctx context.Context) {
 		storePath := extractDynamicPath(debugPath, ctx.Path())
 		store := store.GetStore(storePath)
-		pageId, _ := strconv.Atoi(ctx.Param("page_id"))
-		ctx.WriteString(store.DumpPage(pageId))
+		pageId, _ := ctx.Params().GetInt("page_id")
+		p := store.DumpPage(pageId) // this panics on raw installations
+		ctx.WriteString(p)
 	})
 
-	//api.Delete(tableName, func(ctx *iris.Context) {
+	//api.Delete(tableName, func(ctx context.Context) {
 	//
 	//})
 

@@ -109,6 +109,6 @@ It runs an httpserver with an instance of MmapKVStore
 
 ## Projects used by BluckDB
 
- * [Iris web framework](github.com/kataras/iris)
- * [Gommon logger](github.com/labstack/gommon/log)
- * [Mmap-go](github.com/edsrzf/mmap-go)
+ * [Iris web framework](https://github.com/kataras/iris)
+ * [Gommon logger](https://github.com/labstack/gommon/log)
+ * [Mmap-go](https://github.com/edsrzf/mmap-go)
