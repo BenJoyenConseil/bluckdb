@@ -2,12 +2,15 @@ package main
 
 import (
 	"flag"
-	"github.com/BenJoyenConseil/bluckdb/api"
-	"github.com/BenJoyenConseil/bluckdb/bluckstore"
-	"github.com/kataras/iris"
-	"github.com/labstack/gommon/log"
 	"os"
 	"os/signal"
+
+	"github.com/kataras/iris"
+
+	"github.com/BenJoyenConseil/bluckdb/api"
+	"github.com/BenJoyenConseil/bluckdb/bluckstore"
+
+	"github.com/labstack/gommon/log"
 )
 
 const (
@@ -41,8 +44,5 @@ func main() {
 
 	api := api.AppendIrisHandlers(store)
 
-	api.Set(iris.OptionDisableBanner(true))
-	api.Set(iris.OptionDisablePathCorrection(true))
-
-	api.Listen(":" + port)
+	api.Run(iris.Addr(":"+port), iris.WithoutBanner, iris.WithoutInterruptHandler)
 }

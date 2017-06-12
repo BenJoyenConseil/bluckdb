@@ -8,7 +8,7 @@ import (
 	"github.com/edsrzf/mmap-go"
 	"github.com/labstack/gommon/log"
 	"os"
-	"syscall"
+	"syscall" // syscall.MAP_POPULATE
 )
 
 type Directory struct {
